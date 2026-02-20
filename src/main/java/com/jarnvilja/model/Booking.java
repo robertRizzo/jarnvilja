@@ -2,11 +2,23 @@ package com.jarnvilja.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings", uniqueConstraints = @UniqueConstraint(
+        columnNames = {"member_id", "training_class_id", "booking_date"}
+), indexes = {
+        @Index(name = "idx_booking_date", columnList = "booking_date"),
+        @Index(name = "idx_booking_member", columnList = "member_id")
+})
 public class Booking {
 
     @Id
@@ -15,56 +27,37 @@ public class Booking {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "member_id")
-    private User member;  // Relation till User (medlem)
+    @JoinColumn(name = "member_id", nullable = false)
+    private User member;
 
     @ManyToOne
-    @JoinColumn(name = "training_class_id")
-    private TrainingClass trainingClass;  // Relation till TrainingClass (Träningspass)
+    @JoinColumn(name = "training_class_id", nullable = false)
+    private TrainingClass trainingClass;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private BookingStatus bookingStatus;
 
+    @Column(nullable = false)
     private LocalDate bookingDate;
+
     private LocalDateTime bookingTimeStamp;
 
-    // Standard konstruktor
-    public Booking() {}
-
-    // Konstruktor för skapande av bokning
     public Booking(User member, TrainingClass trainingClass) {
         this.member = member;
         this.trainingClass = trainingClass;
         this.bookingDate = LocalDate.now();
-        this.bookingTimeStamp = LocalDateTime.now(); // Initialiserar bokningens tidsstämpel
-        this.bookingStatus = BookingStatus.PENDING; // Sätter status till PENDING vid skapande
+        this.bookingTimeStamp = LocalDateTime.now();
+        this.bookingStatus = BookingStatus.PENDING;
     }
 
     public boolean isCancelledByMember() {
-        return BookingStatus.CANCELLED.equals(this.bookingStatus);
+        return BookingStatus.CANCELLED_BY_MEMBER.equals(this.bookingStatus);
     }
 
-    // Getter- och setter-metoder för alla fält
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public User getMember() { return member; }
-    public void setMember(User member) { this.member = member; }
-
-    public TrainingClass getTrainingClass() { return trainingClass; }
-    public void setTrainingClass(TrainingClass trainingClass) { this.trainingClass = trainingClass; }
-
-    public BookingStatus getBookingStatus() { return bookingStatus; }
-    public void setBookingStatus(BookingStatus bookingStatus) { this.bookingStatus = bookingStatus; }
-
-    public LocalDate getBookingDate() { return bookingDate; }
-    public void setBookingDate(LocalDate bookingDate) { this.bookingDate = bookingDate; }
-
-    public LocalDateTime getBookingTimeStamp() { return bookingTimeStamp; }
-    public void setBookingTimeStamp(LocalDateTime bookingTimeStamp) { this.bookingTimeStamp = bookingTimeStamp; }
-
-    // Metod för att kontrollera om bokningen har gått ut (om den är äldre än 30 minuter och har status PENDING)
     public boolean isExpired() {
-        return bookingStatus == BookingStatus.PENDING && bookingTimeStamp != null && bookingTimeStamp.isBefore(LocalDateTime.now().minusMinutes(30));
+        return bookingStatus == BookingStatus.PENDING
+                && bookingTimeStamp != null
+                && bookingTimeStamp.isBefore(LocalDateTime.now().minusMinutes(30));
     }
 }

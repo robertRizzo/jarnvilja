@@ -7,8 +7,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -16,10 +17,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import static org.springframework.web.servlet.function.RequestPredicates.headers;
-
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class WebSecurityConfig {
 
     @Autowired
@@ -29,43 +29,47 @@ public class WebSecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/trainer/**", "/bookings/**")
+            )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/index", "/register", "/bli_medlem", "/faq", "/integritetspolicy", "/kontakt", "/om_klubben", "/tranare", "/traningsschema", "/styles.css", "/js", "/images/schema.pdf").permitAll()
+                .requestMatchers("/", "/index", "/login", "/register", "/bli_medlem", "/faq", "/integritetspolicy",
+                        "/kontakt", "/om_klubben", "/tranare", "/traningsschema", "/om_projektet",
+                        "/error", "/styles.css", "/js/**", "/images/**").permitAll()
                 .requestMatchers("/adminPage/**").hasAuthority("ROLE_ADMIN")
-                    .requestMatchers("/memberPage/**").hasAuthority("ROLE_MEMBER")
-                    .requestMatchers("/trainer/**").hasAuthority("ROLE_TRAINER")
+                .requestMatchers("/memberPage/**").hasAuthority("ROLE_MEMBER")
+                .requestMatchers("/trainerPage/**").hasAuthority("ROLE_TRAINER")
+                .requestMatchers("/trainer/**").hasAuthority("ROLE_TRAINER")
                 .anyRequest().authenticated()
             )
             .formLogin(login -> login
                 .loginPage("/login")
-                    .failureUrl("/login?error=true")
+                .successHandler(customAuthenticationSuccessHandler())
+                .failureUrl("/login?error=true")
                 .permitAll()
             )
-                .formLogin(login -> login
-                        .loginPage("/login")
-                        .successHandler(customAuthenticationSuccessHandler())
-                        .failureUrl("/login?error=true")
-                        .permitAll()
-                )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .maximumSessions(1)
                 .expiredUrl("/login?expired")
-                )
-                .userDetailsService(customUserDetailsService)
-                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
+            )
+            .userDetailsService(customUserDetailsService)
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }
 
     @Bean
     public AuthenticationSuccessHandler customAuthenticationSuccessHandler() {
         return (request, response, authentication) -> {
-            if (authentication.getAuthorities().stream().anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"))) {
+            var authorities = authentication.getAuthorities();
+            if (authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
                 response.sendRedirect("/adminPage");
+            } else if (authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_TRAINER"))) {
+                response.sendRedirect("/trainerPage");
             } else {
                 response.sendRedirect("/memberPage");
             }

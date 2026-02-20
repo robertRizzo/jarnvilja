@@ -6,27 +6,31 @@ import com.jarnvilja.model.TrainingClass;
 import com.jarnvilja.model.User;
 import com.jarnvilja.repository.TrainingClassRepository;
 import com.jarnvilja.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.Optional;
 
-import static com.jarnvilja.model.Role.ROLE_ADMIN;
 import static com.jarnvilja.model.Role.ROLE_TRAINER;
 
+@Slf4j
 @Component
 @Order(2)
 public class TrainingClassSeeder implements CommandLineRunner {
 
     private final TrainingClassRepository trainingClassRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public TrainingClassSeeder(TrainingClassRepository trainingClassRepository, UserRepository userRepository) {
+    public TrainingClassSeeder(TrainingClassRepository trainingClassRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.trainingClassRepository = trainingClassRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     private void createOrUpdateTrainingClass(String title, String description, DayOfWeek day, Matta matta, LocalTime startTime, LocalTime endTime, User trainer) {
@@ -43,54 +47,62 @@ public class TrainingClassSeeder implements CommandLineRunner {
             trainingClass.setEndTime(endTime);
             trainingClass.setTrainer(trainer);
             trainingClassRepository.save(trainingClass);
-            System.out.println("Träningsklass '" + title + "' för " + day + " kl. " + startTime + " har skapats.");
+            log.debug("Created training class '{}' for {} at {}", title, day, startTime);
         } else {
-            // Om klassen redan finns, kan du välja att uppdatera den eller ignorera
-            System.out.println("Träningsklass med titeln '" + title + "' för " + day + " kl. " + startTime + " finns redan.");
+            log.debug("Training class '{}' for {} at {} already exists", title, day, startTime);
         }
     }
 
     @Override
     public void run(String... args) throws Exception {
-        // Skapa tränare
+        String defaultPw = passwordEncoder.encode("trainer123");
+
         User trainer1 = new User();
-        trainer1.setUsername("Göran ");
+        trainer1.setUsername("Göran");
         trainer1.setEmail("goran@example.com");
-        trainer1.setRole(ROLE_ADMIN);
+        trainer1.setPassword(defaultPw);
+        trainer1.setRole(ROLE_TRAINER);
 
         User trainer2 = new User();
-        trainer2.setUsername("Hanna \"Kroknäsa\" Karlsson");
+        trainer2.setUsername("Hanna Karlsson");
         trainer2.setEmail("hanna@example.com");
+        trainer2.setPassword(defaultPw);
         trainer2.setRole(ROLE_TRAINER);
 
         User trainer3 = new User();
-        trainer3.setUsername("Fanny \"Stenpanna\" Berg");
+        trainer3.setUsername("Fanny Berg");
         trainer3.setEmail("fanny@example.com");
+        trainer3.setPassword(defaultPw);
         trainer3.setRole(ROLE_TRAINER);
 
         User trainer4 = new User();
-        trainer4.setUsername("Micke \"Huvudskada\" Andersson");
+        trainer4.setUsername("Micke Andersson");
         trainer4.setEmail("micke@example.com");
+        trainer4.setPassword(defaultPw);
         trainer4.setRole(ROLE_TRAINER);
 
         User trainer5 = new User();
         trainer5.setUsername("Tony McClinch");
         trainer5.setEmail("tony@example.com");
+        trainer5.setPassword(defaultPw);
         trainer5.setRole(ROLE_TRAINER);
 
         User trainer6 = new User();
         trainer6.setUsername("Kettlebell-Kajsa");
         trainer6.setEmail("kajsa@example.com");
+        trainer6.setPassword(defaultPw);
         trainer6.setRole(Role.ROLE_TRAINER);
 
         User trainer7 = new User();
-        trainer7.setUsername("Bella \"Strypnacke\" Johansson");
+        trainer7.setUsername("Bella Johansson");
         trainer7.setEmail("bella@example.com");
+        trainer7.setPassword(defaultPw);
         trainer7.setRole(Role.ROLE_TRAINER);
 
         User trainer8 = new User();
-        trainer8.setUsername("Leif \"Benlåset\"");
+        trainer8.setUsername("Leif Benlåset");
         trainer8.setEmail("leif@example.com");
+        trainer8.setPassword(defaultPw);
         trainer8.setRole(Role.ROLE_TRAINER);
 
 
@@ -192,9 +204,9 @@ public class TrainingClassSeeder implements CommandLineRunner {
             createOrUpdateTrainingClass("BJJ", "BJJ - Alla nivåer", DayOfWeek.SUNDAY, Matta.MATTA_2,LocalTime.of(10, 0), LocalTime.of(12, 0), trainer8);
 
 
-            System.out.println("Träningsklasser har skapats.");
+            log.info("Seeded training classes");
         } else {
-            System.out.println("Träningsklasser finns redan – seedning hoppades över.");
+            log.info("Training classes already exist, skipping seed");
         }
     }
 

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/adminPage")
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class AdminController {
 
     private final AdminService adminService;
@@ -31,6 +33,24 @@ public class AdminController {
     }
 
 
+
+    @GetMapping
+    public String adminPage(Model model) {
+        model.addAttribute("users", adminService.getAllUsers());
+        List<Booking> bookings = adminService.getAllBookings();
+        model.addAttribute("bookings", bookings);
+
+        String popularClass = bookings.stream()
+                .filter(b -> b.getTrainingClass() != null)
+                .collect(Collectors.groupingBy(b -> b.getTrainingClass().getTitle(), Collectors.counting()))
+                .entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("–");
+        model.addAttribute("popularClass", popularClass);
+
+        return "adminPage";
+    }
 
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {
@@ -46,19 +66,6 @@ public class AdminController {
        return adminService.deleteUser(id);
     }
 
-    /*
-    @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = adminService.getAllUsers();
-        if (users.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(users, HttpStatus.OK);
-    }
-
-     */
-
-
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserId(@PathVariable Long id) {
         User user = adminService.getUserById(id);
@@ -69,7 +76,7 @@ public class AdminController {
     }
 
 
-    @GetMapping("/{role}")
+    @GetMapping("/role/{role}")
     public ResponseEntity<List<User>> getUsersByRole(@PathVariable Role role) {
         List<User> users = adminService.getUsersByRole(role);
 

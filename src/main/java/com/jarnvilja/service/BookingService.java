@@ -9,6 +9,7 @@ import com.jarnvilja.repository.BookingRepository;
 import com.jarnvilja.repository.TrainingClassRepository;
 import com.jarnvilja.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -44,6 +45,7 @@ public class BookingService {
     // Bokning
 
 
+    @Transactional
     public Booking createBooking(Long userId, Long trainingClassId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User  not found"));
@@ -60,6 +62,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    @Transactional
     public Booking cancelBooking(Long bookingId) {
         Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
 
@@ -135,6 +138,7 @@ public class BookingService {
 
     // Bokningshantering:
 
+    @Transactional
     public Booking updateBooking(Long bookingId, Booking updatedBooking) {
         Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
 
@@ -151,6 +155,7 @@ public class BookingService {
         return bookingRepository.save(existingBooking);
     }
 
+    @Transactional
     public Booking confirmBooking(Long bookingId) {
         Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
         if (bookingOptional.isEmpty()) {
@@ -161,6 +166,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    @Transactional
     public void deleteBookingsByClassId(Long trainingClassId) {
         bookingRepository.deleteByTrainingClassId(trainingClassId);
     }
@@ -192,6 +198,7 @@ public class BookingService {
         return bookingRepository.findByTrainingClassIdAndMemberId(classId, memberId);
     }
 
+    @Transactional
     public void cancelAllBookingsForMember(Long memberId) {
         List<Booking> bookings = bookingRepository.findByMemberId(memberId);
         for (Booking booking : bookings) {

@@ -1,82 +1,52 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Träningsschema - Järnvilja Kampsport</title>
-    <link rel="stylesheet" th:href="@{/styles.css}">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Träningsschema - Järnvilja Kampsport')}"></head>
 <body>
-<header>
-    <nav>
-        <a th:href="@{/index}">Startsida</a>
-        <a th:href="@{/om_klubben}">Om klubben</a>
-        <a th:href="@{/tranare}">Våra tränare</a>
-        <a th:href="@{/traningsschema}">Träningsschema</a>
-        <a th:href="@{/bli_medlem}">Bli Medlem</a>
-        <a th:href="@{/kontakt}">Kontakt</a>
-        <a th:if="${!#authorization.expression('isAuthenticated()')}" th:href="@{/login}">Logga in</a>
-        <a th:if="${#authorization.expression('isAuthenticated()')}" th:href="@{/logout}">Logga ut</a>
-    </nav>
-</header>
+<header th:replace="~{fragments/layout :: header}"></header>
+
 <main>
-    <h1>📅 Terminsschema – Vårterminen 2024</h1>
+    <h1>Terminsschema</h1>
 
     <div class="info">
-        <p>📍 <strong>Klubbens öppettider:</strong><br>
-            🕗 <strong>Mån–Fre:</strong> 08:00 – 22:00<br>
-            🕗 <strong>Lör–Sön:</strong> 08:00 – 14:00</p>
+        <p><strong>Klubbens öppettider:</strong><br>
+            <strong>Mån--Fre:</strong> 08:00 -- 22:00<br>
+            <strong>Lör--Sön:</strong> 08:00 -- 14:00</p>
 
-        <p>📌 <strong>Viktig information:</strong><br>
-            ✅ <strong>Boka ditt pass i förväg</strong> via klubbens bokningssystem.<br>
-            ✅ <strong>Öppen matta</strong> är tillgänglig när inga schemalagda pass pågår.<br>
-            ✅ <strong>Sparringpass</strong> kräver minst 6 månaders erfarenhet.<br>
-            ✅ <strong>Ta med egen utrustning</strong> – handskar, lindor, tandskydd och gi vid behov.</p>
+        <p><strong>Viktig information:</strong><br>
+            <strong>Boka ditt pass i förväg</strong> via klubbens bokningssystem.<br>
+            <strong>Öppen matta</strong> är tillgänglig när inga schemalagda pass pågår.<br>
+            <strong>Sparringpass</strong> kräver minst 6 månaders erfarenhet.<br>
+            <strong>Ta med egen utrustning</strong> -- handskar, lindor, tandskydd och gi vid behov.</p>
 
-        <p>👊 <strong>Välkommen till en ny termin med Järnvilja Kampsport!</strong></p>
+        <p><strong>Välkommen till en ny termin med Järnvilja Kampsport!</strong></p>
     </div>
 
-    <div id="pdfModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7);">
-        <div class="modal-content" style="position:relative; margin:5% auto; padding:0; width:80%; height:80%; background:#fff; border-radius:8px; overflow:hidden;">
-            <span class="close" onclick="closeModal()" style="position:absolute; top:10px; right:20px; font-size:30px; cursor:pointer;">&times;</span>
-            <iframe id="pdfIframe" src="" width="100%" height="100%" style="border:none;"></iframe>
+    <div id="pdfModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePdfModal()">&times;</span>
+            <iframe id="pdfIframe" src="" width="100%" height="100%"></iframe>
         </div>
     </div>
 
-    <button onclick="openModal('/images/schema.pdf')">Visa Schema</button>
+    <button onclick="openPdfModal('/images/schema.pdf')">Visa Schema (PDF)</button>
 
     <script>
-        function openModal(pdfUrl) {
-            document.getElementById('pdfIframe').src = pdfUrl;
-            document.getElementById('pdfModal').style.display = "block";
-        }
-
-        function closeModal() {
-            document.getElementById('pdfModal').style.display = "none";
-            document.getElementById('pdfIframe').src = "";
-        }
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('pdfModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
+    function openPdfModal(pdfUrl) {
+        document.getElementById('pdfIframe').src = pdfUrl;
+        document.getElementById('pdfModal').style.display = 'block';
+    }
+    function closePdfModal() {
+        document.getElementById('pdfModal').style.display = 'none';
+        document.getElementById('pdfIframe').src = '';
+    }
+    window.addEventListener('click', function(e) {
+        var modal = document.getElementById('pdfModal');
+        if (e.target === modal) closePdfModal();
+    });
     </script>
-
 </main>
 
-<footer>
-    <p>Kontaktinformation: info@jarnvilja.se | Telefon: 012-345 67 89</p>
-    <p>
-        <a href="https://www.facebook.com/jarnvilja">Facebook</a> |
-        <a href="https://www.instagram.com/jarnvilja">Instagram</a> |
-        <a href="https://www.twitter.com/jarnvilja">Twitter</a>
-    </p>
-    <p>Adress: Järnvägsgatan 1, 123 45 Staden</p>
-    <p>
-        <a th:href="@{integritetspolicy}">Integritetspolicy</a> |
-        <a th:href="@{faq}">Vanliga frågor</a>
-    </p>
-</footer>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
 </body>
 </html>

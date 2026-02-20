@@ -8,6 +8,7 @@ import com.jarnvilja.repository.TrainingClassRepository;
 import com.jarnvilja.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -35,11 +36,13 @@ public class AdminService {
 
     // Hantera användare
 
+    @Transactional
     public User createUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 
+    @Transactional
     public User updateUser(Long id, User updatedUser) {
         Optional<User> user = userRepository.findById(id);
         if (user.isPresent()) {
@@ -54,6 +57,7 @@ public class AdminService {
     }
 
 
+    @Transactional
     public String deleteUser(Long id) {
         userRepository.deleteById(id);
         return "User " + id + " deleted";
@@ -71,6 +75,7 @@ public class AdminService {
         return userRepository.findUsersByRole(role);
     }
 
+    @Transactional
     public User assignRoleToUser(Long id, Role role) {
         Optional<User> userOptional = userRepository.findById(id);
         if (userOptional.isPresent()) {
@@ -81,6 +86,7 @@ public class AdminService {
         return null;
     }
 
+    @Transactional
     public User resetUserPassword(Long id, String newPassword) {
         Optional<User> userOptional = userRepository.findById(id);
         if (userOptional.isPresent()) {
@@ -96,6 +102,7 @@ public class AdminService {
 
     // Hantera tränare
 
+    @Transactional
     public TrainingClass assignTrainerToClass(Long classId, Long trainerId) {
         TrainingClass trainingClass = trainingClassRepository.findById(classId)
                 .orElseThrow(() -> new RuntimeException("Training class not found"));
@@ -109,6 +116,7 @@ public class AdminService {
     }
 
 
+    @Transactional
     public String removeTrainerFromClass(Long classId, Long trainerId) {
         Optional<TrainingClass> trainingClassOpt = trainingClassRepository.findById(classId);
 
@@ -147,6 +155,7 @@ public class AdminService {
         return bookingRepository.findAll();
     }
 
+    @Transactional
     public String deleteBooking(Long bookingId) {
         Optional<Booking> bookingOpt = bookingRepository.findById(bookingId);
         if (bookingOpt.isPresent()) {
@@ -160,6 +169,7 @@ public class AdminService {
         return bookingRepository.findById(id).orElseThrow(() -> new RuntimeException("Booking not found"));
     }
 
+    @Transactional
     public List<Booking> cancelAllBookingsForClass(Long trainingClassId) {
         List<Booking> bookings = bookingRepository.findByTrainingClassId(trainingClassId);
 
@@ -173,6 +183,7 @@ public class AdminService {
          return bookingRepository.findByBookingStatus(status);
     }
 
+    @Transactional
     public void removeExpiredBookings() {
         List<Booking> allBookings = bookingRepository.findAll();  // Hämta alla bokningar
         List<Booking> expiredBookings = allBookings.stream()

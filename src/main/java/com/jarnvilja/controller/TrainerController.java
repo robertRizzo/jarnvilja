@@ -6,14 +6,15 @@ import com.jarnvilja.model.User;
 import com.jarnvilja.service.TrainerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @Controller
 @RequestMapping("/trainer")
+@PreAuthorize("hasAuthority('ROLE_TRAINER')")
 public class TrainerController {
 
     private final TrainerService trainerService;
@@ -21,24 +22,6 @@ public class TrainerController {
     public TrainerController(TrainerService trainerService) {
         this.trainerService = trainerService;
     }
-
-    /*
-    @GetMapping("/{trainerId}/classes/upcoming")
-    public ResponseEntity<List<TrainingClass>> getMyUpcomingTrainingClasses(@PathVariable Long trainerId) {
-        List<TrainingClass> upcomingClasses = trainerService.getMyUpcomingTrainingClasses(trainerId,);
-        return new ResponseEntity<>(upcomingClasses, HttpStatus.OK);
-    }
-
-
-    @GetMapping("/{trainerId}/classes/past")
-    public ResponseEntity<List<TrainingClass>> getMyPastTrainingClasses(@PathVariable Long trainerId) {
-        List<TrainingClass> pastClasses = trainerService.getMyPastTrainingClasses(trainerId);
-        return new ResponseEntity<>(pastClasses, HttpStatus.OK);
-    }
-
-     */
-
-
 
     @GetMapping("/{trainerId}/classes/{trainingClassId}")
     public ResponseEntity<TrainingClass> getTrainingClassDetails(@PathVariable Long trainerId, @PathVariable Long trainingClassId) {

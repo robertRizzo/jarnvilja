@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="sv" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Tränarsida - Järnvilja Kampsport')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main>
+    <h1>Välkommen, <span sec:authentication="name"></span>!</h1>
+
+    <div th:replace="~{fragments/layout :: toasts}"></div>
+
+    <section class="admin-stats">
+        <div class="stat-card">
+            <span class="stat-number" th:text="${classes != null ? #lists.size(classes) : 0}">0</span>
+            <span class="stat-label">Mina pass</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" th:text="${totalBookings != null ? totalBookings : 0}">0</span>
+            <span class="stat-label">Totala bokningar</span>
+        </div>
+    </section>
+
+    <h2>Mina Träningspass</h2>
+
+    <div th:if="${classes != null}" th:each="tc : ${classes}" class="trainer-class-card">
+        <h3 th:text="${tc.title}">Klass</h3>
+        <p class="trainer-class-meta">
+            <span th:switch="${tc.trainingDay.name()}">
+                <span th:case="'MONDAY'">Måndag</span><span th:case="'TUESDAY'">Tisdag</span><span th:case="'WEDNESDAY'">Onsdag</span><span th:case="'THURSDAY'">Torsdag</span><span th:case="'FRIDAY'">Fredag</span><span th:case="'SATURDAY'">Lördag</span><span th:case="'SUNDAY'">Söndag</span>
+            </span> |
+            <span th:text="${#temporals.format(tc.startTime, 'HH:mm')}">Start</span> -
+            <span th:text="${#temporals.format(tc.endTime, 'HH:mm')}">Slut</span> |
+            <span th:switch="${tc.matta.name()}">
+                <span th:case="'MATTA_1'">Matta 1</span><span th:case="'MATTA_2'">Matta 2</span>
+            </span>
+        </p>
+        <p th:text="${tc.description}">Beskrivning</p>
+        <p>
+            <span th:text="'Bokningar: ' + ${tc.bookings != null ? #lists.size(tc.bookings) : 0}">Bokningar: 0</span>
+        </p>
+    </div>
+
+    <div th:if="${classes == null || #lists.isEmpty(classes)}" class="alert alert-info">
+        <p>Du har inga tilldelade träningspass ännu.</p>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

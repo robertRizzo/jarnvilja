@@ -135,11 +135,10 @@ public class TrainingClassServiceTest {
         assertEquals(trainingClass, foundClass);
     }
 
-    // getAllTrainingClasses()           // Hämta alla träningspass
     @Test
     void testGetAllTrainingClasses() {
         List<TrainingClass> classes = List.of(trainingClass);
-        when(trainingClassRepository.findAll()).thenReturn(classes);
+        when(trainingClassRepository.findAvailableClasses()).thenReturn(classes);
 
         List<TrainingClass> result = trainingClassService.getAllTrainingClasses();
 

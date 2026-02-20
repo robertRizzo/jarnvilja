@@ -1,92 +1,103 @@
 <!DOCTYPE html>
-<html lang="sv" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Page</title>
-    <link rel="stylesheet" th:href="@{styles.css}">
-</head>
+<html lang="sv" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Admin - Järnvilja Kampsport')}"></head>
 <body>
-<header>
+<header th:replace="~{fragments/layout :: header}"></header>
 
-    <nav>
-        <a th:href="@{/index}">Startsida</a>
-        <a th:href="@{/om_klubben}">Om klubben</a>
-        <a th:href="@{/tranare}">Våra tränare</a>
-        <a th:href="@{/traningsschema}">Träningsschema</a>
-        <a th:href="@{/bli_medlem}">Bli Medlem</a>
-        <a th:href="@{/kontakt}">Kontakt</a>
-        <a th:if="${!#authorization.expression('isAuthenticated()')}" th:href="@{/login}">Logga in</a>
-        <a th:if="${#authorization.expression('isAuthenticated()')}" th:href="@{/logout}">Logga ut</a>
-    </nav>
-</header>
+<main>
     <h1>Välkommen till Admin-sidan!</h1>
     <p>Här kan du hantera användare, tränare och andra admin-funktioner.</p>
 
-<h2>Användare</h2>
-<table>
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Användarnamn</th>
-        <th>E-post</th>
-        <th>Roll</th>
-        <th>Åtgärd</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="user : ${users}">
-        <td th:text="${user.id}"></td>
-        <td th:text="${user.username}"></td>
-        <td th:text="${user.email}"></td>
-        <td th:text="${user.role}"></td>
-        <td>
-            <a th:href="@{/adminPage/editUser/{id}(id=${user.id})}">Redigera</a>
-            <a th:href="@{/adminPage/deleteUser/{id}(id=${user.id})}">Ta bort</a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+    <div th:replace="~{fragments/layout :: toasts}"></div>
 
-<h2>Bokningar</h2>
-<table>
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Användare</th>
-        <th>Träningspass</th>
-        <th>Status</th>
-        <th>Åtgärd</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="booking : ${bookings}">
-        <td th:text="${booking.id}"></td>
-        <td th:text="${booking.member.username}"></td>
-        <td th:text="${booking.trainingClass.title}"></td>
-        <td th:text="${booking.bookingStatus}"></td>
-        <td>
-            <form th:action="@{/adminPage/deleteBooking/{bookingId}(bookingId=${booking.id})}" method="post" style="display:inline;">
-                <input type="hidden" name="_method" value="delete" />
-                <button type="submit">Ta bort</button>
-            </form>
-        </td>
-    </tr>
-    </tbody>
-</table>
+    <section class="admin-stats">
+        <div class="stat-card">
+            <span class="stat-number" th:text="${users != null ? #lists.size(users) : 0}">0</span>
+            <span class="stat-label">Användare</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" th:text="${bookings != null ? #lists.size(bookings) : 0}">0</span>
+            <span class="stat-label">Bokningar</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" th:text="${popularClass}">–</span>
+            <span class="stat-label">Populäraste pass</span>
+        </div>
+    </section>
 
+    <h2>Användare</h2>
+    <div class="table-responsive">
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Användarnamn</th>
+                <th>E-post</th>
+                <th>Roll</th>
+                <th>Åtgärd</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="user : ${users}">
+                <td th:text="${user.id}"></td>
+                <td th:text="${user.username}"></td>
+                <td th:text="${user.email}"></td>
+                <td th:switch="${user.role.name()}">
+                    <span th:case="'ROLE_ADMIN'">Admin</span>
+                    <span th:case="'ROLE_MEMBER'">Medlem</span>
+                    <span th:case="'ROLE_TRAINER'">Tränare</span>
+                </td>
+                <td class="action-cell">
+                    <a th:href="@{/adminPage/editUser/{id}(id=${user.id})}" class="btn-link">Redigera</a>
+                    <form th:action="@{/adminPage/{id}(id=${user.id})}" method="post" class="inline-form"
+                          data-confirm="Är du säker på att du vill ta bort denna användare?">
+                        <input type="hidden" name="_method" value="delete"/>
+                        <button type="submit" class="small-button btn-danger">Ta bort</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Bokningar</h2>
+    <div class="table-responsive">
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Användare</th>
+                <th>Träningspass</th>
+                <th>Status</th>
+                <th>Åtgärd</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="booking : ${bookings}">
+                <td th:text="${booking.id}"></td>
+                <td th:text="${booking.member.username}"></td>
+                <td th:text="${booking.trainingClass.title}"></td>
+                <td th:switch="${booking.bookingStatus.name()}">
+                    <span th:case="'CONFIRMED'" class="status-confirmed">Bekräftad</span>
+                    <span th:case="'PENDING'" class="status-pending">Väntande</span>
+                    <span th:case="'CANCELLED'" class="status-cancelled">Avbokad</span>
+                    <span th:case="'CANCELLED_BY_MEMBER'" class="status-cancelled">Avbokad av medlem</span>
+                    <span th:case="'EXPIRED'" class="status-expired">Utgången</span>
+                </td>
+                <td>
+                    <form th:action="@{/adminPage/deleteBooking/{bookingId}(bookingId=${booking.id})}" method="post" class="inline-form">
+                        <input type="hidden" name="_method" value="delete" />
+                        <button type="submit" class="small-button btn-danger">Ta bort</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: confirm-modal}"></div>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
 </body>
-<footer class="footer">
-    <p>Kontaktinformation: info@jarnvilja.se | Telefon: 012-345 67 89</p>
-    <p>
-        <a href="https://www.facebook.com/jarnvilja">Facebook</a> |
-        <a href="https://www.instagram.com/jarnvilja">Instagram</a> |
-        <a href="https://www.twitter.com/jarnvilja">Twitter</a>
-    </p>
-    <p>Adress: Järnvägsgatan 1, 123 45 Staden</p>
-    <p>
-        <a th:href="@{integritetspolicy}">Integritetspolicy</a> |
-        <a th:href="@{faq}">Vanliga frågor</a>
-    </p>
-</footer>
 </html>

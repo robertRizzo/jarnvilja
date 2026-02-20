@@ -26,14 +26,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b.member.id FROM Booking b GROUP BY b.member.id ORDER BY COUNT(b.id) DESC LIMIT 1")
     Long findMostActiveMemberId();
 
-    @Query("SELECT COUNT(b.id) FROM Booking b WHERE b.trainingClass.title = :classId")
+    @Query("SELECT COUNT(b.id) FROM Booking b WHERE b.trainingClass.id = :classId")
     Long countBookingsForClass(@Param("classId") Long classId);
 
     @Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :startDate AND :endDate")
     List<Booking> findBookingsByDateBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
-    @Query("SELECT b FROM Booking b WHERE b.member.id = :userId")
-    List<Booking> findMemberId(@Param("memberID") Long memberId);
+    @Query("SELECT b FROM Booking b WHERE b.member.id = :memberId")
+    List<Booking> findMemberId(@Param("memberId") Long memberId);
 
     @Query("SELECT b.trainingClass.title, COUNT(b.id) FROM Booking b GROUP BY b.trainingClass.title")
     List<Object[]> getClassStats();

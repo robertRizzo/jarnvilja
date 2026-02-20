@@ -39,6 +39,8 @@ public class MemberControllerTest {
     @Mock
     private MemberService memberService;
 
+    @Mock
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
@@ -56,10 +58,9 @@ public class MemberControllerTest {
         newMember.setPassword("password");
         newMember.setRole(Role.ROLE_MEMBER); // Anta att Role är en enum
 
-        // Mocka beteendet för memberService
+        when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
         when(memberService.createMember(any(User.class))).thenReturn(newMember);
 
-        // Anropa createMember och verifiera resultatet
         ResponseEntity<User> response = memberController.createMember(newMember);
 
         // Kontrollera att svaret är 201 CREATED
@@ -200,9 +201,8 @@ public class MemberControllerTest {
         TrainingClass trainingClass = new TrainingClass();
         trainingClass.setId(1L);
 
-        // Mocka behavior för getTrainingDay() och getStartTime() för att simulera att passet inte går att boka
-        when(trainingClass.getTrainingDay()).thenReturn(DayOfWeek.MONDAY);
-        when(trainingClass.getStartTime()).thenReturn(LocalTime.now().minusHours(1)); // Simulerar att passet har startat
+        trainingClass.setTrainingDay(DayOfWeek.MONDAY);
+        trainingClass.setStartTime(LocalTime.now().minusHours(1));
 
         // Mocka memberService och simulera att passet redan är bokat
         when(memberService.checkBookingStatus(member.getId(), trainingClass.getId())).thenReturn(message);
@@ -482,7 +482,7 @@ public class MemberControllerTest {
     void testGetMembershipStats() {
         // Skapa en mockad medlemsstatistik DTO
         Long memberId = 1L; // Exempel på memberId
-        MembershipStatsDTO mockMembershipStats = new MembershipStatsDTO(memberId, 5); // Antal bokningar
+        MembershipStatsDTO mockMembershipStats = new MembershipStatsDTO(memberId, 5, "Boxning", java.time.LocalDate.of(2025, 1, 15));
 
         // Mocka beteendet för memberService
         when(memberService.getMembershipStats(memberId)).thenReturn(mockMembershipStats);

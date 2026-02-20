@@ -11,6 +11,7 @@ import com.jarnvilja.repository.TrainingClassRepository;
 import com.jarnvilja.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -41,10 +42,12 @@ public class MemberService {
         createMember(user);
     }
 
+    @Transactional
     public User createMember(User user) {
         return userRepository.save(user);
     }
 
+    @Transactional
     public User updateMember(Long memberId, User updatedMember) {
         User member = userRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
@@ -53,6 +56,7 @@ public class MemberService {
         return userRepository.save(member);
     }
 
+    @Transactional
     public void deleteMember(Long memberId) {
         User member = userRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
@@ -73,6 +77,7 @@ public class MemberService {
                 .orElseThrow(() -> new RuntimeException("Member not found"));
     }
 
+    @Transactional
     public User updateMemberPassword(Long memberId, String newPassword) {
         User member = userRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
@@ -115,6 +120,7 @@ public class MemberService {
         return null;
     }
 
+    @Transactional
     public Booking createBooking(Long memberId, Long trainingClassId) {
         // Hämta användaren och träningsklassen
         User user = userRepository.findById(memberId)
@@ -145,6 +151,7 @@ public class MemberService {
     }
 
 
+    @Transactional
     public Booking confirmBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
@@ -157,6 +164,7 @@ public class MemberService {
         return bookingRepository.save(booking);
     }
 
+    @Transactional
     public void expirePendingBookings() {
         List<Booking> pendingBookings = bookingRepository.findPendingBookingsBefore(LocalDateTime.now().minusMinutes(30));
 
@@ -166,6 +174,7 @@ public class MemberService {
         }
     }
 
+    @Transactional
     public void cancelBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
@@ -265,7 +274,15 @@ public class MemberService {
 
         int totalBookings = bookings.size();
 
-        return new MembershipStatsDTO(member.getId(), totalBookings);
+        String mostBooked = bookings.stream()
+                .filter(b -> b.getTrainingClass() != null)
+                .collect(Collectors.groupingBy(b -> b.getTrainingClass().getTitle(), Collectors.counting()))
+                .entrySet().stream()
+                .max(java.util.Map.Entry.comparingByValue())
+                .map(java.util.Map.Entry::getKey)
+                .orElse("–");
+
+        return new MembershipStatsDTO(member.getId(), totalBookings, mostBooked, member.getCreatedAt());
     }
 
 

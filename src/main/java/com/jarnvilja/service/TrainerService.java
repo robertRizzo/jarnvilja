@@ -2,6 +2,7 @@ package com.jarnvilja.service;
 
 import com.jarnvilja.model.Booking;
 import com.jarnvilja.model.BookingStatus;
+import com.jarnvilja.model.ClassStatus;
 import com.jarnvilja.model.TrainingClass;
 import com.jarnvilja.model.User;
 import com.jarnvilja.repository.BookingRepository;
@@ -9,9 +10,8 @@ import com.jarnvilja.repository.TrainingClassRepository;
 import com.jarnvilja.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,25 +31,6 @@ public class TrainerService {
 
     @Autowired
     private EmailService emailService;
-
-
-    //  Tränarens tillgång till träningspass:
-
-    /*
-    // Hämta kommande träningspass för en tränare
-    public List<TrainingClass> getMyUpcomingTrainingClasses(Long trainerId) {
-        // Hämta alla träningspass för tränaren där datumet är i framtiden
-        return trainingClassRepository.findByTrainerIdAndTrainingDayAfter(trainerId);
-    }
-
-    // Hämta tidigare träningspass för en tränare
-    public List<TrainingClass> getMyPastTrainingClasses(Long trainerId, DayOfWeek dayOfWeek) {
-        // Hämta alla träningspass för tränaren som redan har ägt rum
-        return trainingClassRepository.findByTrainerIdAndTrainingDayBefore(trainerId, dayOfWeek);
-    }
-
-     */
-
 
 
     // Hämta detaljer för ett specifikt träningspass som tränaren håller
@@ -90,6 +71,7 @@ public class TrainerService {
     }
 
     // Ta bort en medlem från tränarens pass
+    @Transactional
     public void removeMemberFromMyTrainingClass(Long trainerId, Long trainingClassId, Long memberId) {
         TrainingClass trainingClass = trainingClassRepository.findById(trainingClassId)
                 .orElseThrow(() -> new RuntimeException("Training class not found"));
@@ -123,12 +105,13 @@ public class TrainerService {
         );
     }
 
+    @Transactional
     public void cancelMyTrainingClass(Long trainingClassId, String reason) {
         TrainingClass trainingClass = trainingClassRepository.findById(trainingClassId)
                 .orElseThrow(() -> new RuntimeException("Träningspass ej hittat"));
 
         // Markera passet som inställt
-        trainingClass.setStatus(BookingStatus.CANCELLED);
+        trainingClass.setStatus(ClassStatus.CANCELLED);
 
         // Skicka bekräftelse till tränaren
         emailService.sendEmail(

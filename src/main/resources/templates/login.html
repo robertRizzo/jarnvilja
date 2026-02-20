@@ -1,54 +1,54 @@
 <!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logga in - Järnvilja Kampsport</title>
-    <link rel="stylesheet" th:href="@{/styles.css}">
-    <base href="/">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Logga in - Järnvilja Kampsport')}"></head>
 <body>
-<header>
-    <nav>
-        <a th:href="@{/index}">Startsida</a>
-        <a th:href="@{/om_klubben}">Om klubben</a>
-        <a th:href="@{/tranare}">Våra tränare</a>
-        <a th:href="@{/traningsschema}">Träningsschema</a>
-        <a th:href="@{/bli_medlem}">Bli Medlem</a>
-        <a th:href="@{/kontakt}">Kontakt</a>
-        <a th:if="${!#authorization.expression('isAuthenticated()')}" th:href="@{/login}">Logga in</a>
-        <a th:if="${#authorization.expression('isAuthenticated()')}" th:href="@{/logout}">Logga ut</a>
-    </nav>
-</header>
-<div class="login-container">
-    <h1>Logga in</h1>
-    <form  method="POST" th:action="@{/login}">
-        <div class="form-group">
-            <label for="username">Användarnamn</label>
-            <input type="text" id="username" name="username" required>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main>
+    <div class="login-container">
+        <h1>Logga in</h1>
+        <div th:if="${param.error}" class="alert alert-error">
+            <p>Felaktigt användarnamn eller lösenord.</p>
         </div>
-        <div class="form-group">
-            <label for="password">Lösenord</label>
-            <input type="password" id="password" name="password" required>
+        <div th:if="${param.expired}" class="alert alert-error">
+            <p>Din session har gått ut. Logga in igen.</p>
         </div>
-        <button type="submit">Logga in</button>
-    </form>
-    <div class="footer">
-        <p>Har du inget konto? <a th:href="@{/register}">Registrera dig här</a></p>
+        <form method="POST" th:action="@{/login}">
+            <div class="form-group">
+                <label for="username">Användarnamn</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Lösenord</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Logga in</button>
+        </form>
+        <div class="login-footer">
+            <p>Har du inget konto? <a th:href="@{/register}">Registrera dig här</a></p>
+        </div>
+
+        <div class="demo-banner">
+            <h3>Testa Demo</h3>
+            <p>Klicka för att logga in som:</p>
+            <div class="demo-buttons">
+                <button type="button" class="demo-btn" onclick="fillDemo('demo','demo123')">Medlem</button>
+                <button type="button" class="demo-btn" onclick="fillDemo('demo_admin','demo123')">Admin</button>
+                <button type="button" class="demo-btn" onclick="fillDemo('demo_trainer','demo123')">Tränare</button>
+            </div>
+        </div>
     </div>
-</div>
-<footer>
-    <p>Kontaktinformation: info@jarnvilja.se | Telefon: 012-345 67 89</p>
-    <p>
-        <a href="https://www.facebook.com/jarnvilja">Facebook</a> |
-        <a href="https://www.instagram.com/jarnvilja">Instagram</a> |
-        <a href="https://www.twitter.com/jarnvilja">Twitter</a>
-    </p>
-    <p>Adress: Järnvägsgatan 1, 123 45 Staden</p>
-    <p>
-        <a th:href="@{integritetspolicy}">Integritetspolicy</a> |
-        <a th:href="@{faq}">Vanliga frågor</a>
-    </p>
-</footer>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script>
+function fillDemo(user, pass) {
+    document.getElementById('username').value = user;
+    document.getElementById('password').value = pass;
+    document.querySelector('form').submit();
+}
+</script>
 </body>
 </html>

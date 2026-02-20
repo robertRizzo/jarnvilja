@@ -1,42 +1,54 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Järnvilja Kampsport - Startsida</title>
-    <link rel="stylesheet" th:href="@{/styles.css}"> <!-- Länka till din CSS-fil -->
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Järnvilja Kampsport - Startsida')}"></head>
 <body>
-<header>
-    <nav>
-        <a th:href="@{/index}">Startsida</a>
-        <a th:href="@{/om_klubben}">Om klubben</a>
-        <a th:href="@{/tranare}">Våra tränare</a>
-        <a th:href="@{/traningsschema}">Träningsschema</a>
-        <a th:href="@{/bli_medlem}">Bli Medlem</a>
-        <a th:href="@{/kontakt}">Kontakt</a>
-        <a th:if="${!#authorization.expression('isAuthenticated()')}" th:href="@{/login}">Logga in</a>
-        <a th:if="${#authorization.expression('isAuthenticated()')}" th:href="@{/logout}">Logga ut</a>
-    </nav>
-</header>
+<header th:replace="~{fragments/layout :: header}"></header>
 
 <div class="hero">
-    <h1>Det är inte de starkaste som vinner – det är de som aldrig slutar kämpa.</h1>
+    <h1>Det är inte de starkaste som vinner -- det är de som aldrig slutar kämpa.</h1>
     <p>Bli Medlem idag!</p>
     <a th:href="@{/bli_medlem}"><button class="cta-button">Bli Medlem Idag</button></a>
 </div>
 
-<footer>
-    <p>Kontaktinformation: info@jarnvilja.se | Telefon: 012-345 67 89</p>
-    <p>
-        <a href="https://www.facebook.com/jarnvilja">Facebook</a> |
-        <a href="https://www.instagram.com/jarnvilja">Instagram</a> |
-        <a href="https://www.twitter.com/jarnvilja">Twitter</a>
-    </p>
-    <p>Adress: Järnvägsgatan 1, 123 45 Staden</p>
-    <p>
-        <a th:href="@{integritetspolicy}">Integritetspolicy</a> |
-        <a th:href="@{faq}">Vanliga frågor</a>
-    </p>
-</footer>
+<main>
+    <section class="features-section">
+        <h2>Våra Kamparter</h2>
+        <div class="feature-cards">
+            <div class="feature-card">
+                <h3>Thaiboxning</h3>
+                <p>Slag, sparkar, knän och armbågar -- den kompletta kampkonsten.</p>
+                <a th:href="@{/traningsschema}" class="feature-link">Se schema</a>
+            </div>
+            <div class="feature-card">
+                <h3>BJJ</h3>
+                <p>Brazilian Jiu-Jitsu -- teknik och positionering på mattan.</p>
+                <a th:href="@{/traningsschema}" class="feature-link">Se schema</a>
+            </div>
+            <div class="feature-card">
+                <h3>Boxning &amp; Fys</h3>
+                <p>Klassisk boxning och funktionell styrketräning.</p>
+                <a th:href="@{/traningsschema}" class="feature-link">Se schema</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats-section">
+        <div class="stat-item"><span class="stat-number">70+</span><span class="stat-label">Pass per vecka</span></div>
+        <div class="stat-item"><span class="stat-number">8</span><span class="stat-label">Tränare</span></div>
+        <div class="stat-item"><span class="stat-number">3</span><span class="stat-label">Kamparter</span></div>
+    </section>
+
+    <section class="how-to-section">
+        <h2>Kom igång</h2>
+        <div class="steps">
+            <div class="step"><span class="step-number">1</span><p>Kolla in vårt <a th:href="@{/traningsschema}">träningsschema</a></p></div>
+            <div class="step"><span class="step-number">2</span><p><a th:href="@{/register}">Registrera dig</a> som medlem</p></div>
+            <div class="step"><span class="step-number">3</span><p>Boka ditt första pass</p></div>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
 </body>
 </html>
