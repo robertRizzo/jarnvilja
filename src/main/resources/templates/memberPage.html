@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="sv" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medlemssida</title>
+    <link rel="stylesheet" th:href="@{styles.css}">
+    <style>
+        .weekdays {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .day {
+            background-color: #eee;
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            flex: 1 1 100px;
+            transition: background-color 0.2s;
+        }
+
+        .day:hover {
+            background-color: #ccc;
+        }
+
+        .day-schedule {
+            background-color: #f9f9f9;
+            padding: 1em;
+            border-radius: 10px;
+            margin-bottom: 1em;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        .all-classes {
+            margin-top: 2em;
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <h2>Mitt Konto</h2>
+    <ul>
+        <li><a href="#">Min profil</a></li>
+        <li><a href="#">Träningsstatistik</a></li>
+        <li><a href="#">Mina bokningar</a></li>
+        <li><a href="#">Tillgängliga pass</a></li>
+        <li><a href="#">Inställningar</a></li>
+    </ul>
+</div>
+
+<main  class="main-content">
+
+<div th:if="${bookingMessage}" style="color: red; margin-bottom: 20px;">
+    <p th:text="${bookingMessage}"></p>
+</div>
+
+<header>
+    <nav>
+        <a th:href="@{/index}">Startsida</a>
+        <a th:href="@{/om_klubben}">Om klubben</a>
+        <a th:href="@{/tranare}">Våra tränare</a>
+        <a th:href="@{/traningsschema}">Träningsschema</a>
+        <a th:href="@{/bli_medlem}">Bli Medlem</a>
+        <a th:href="@{/kontakt}">Kontakt</a>
+        <a th:if="${!#authorization.expression('isAuthenticated()')}" th:href="@{/login}">Logga in</a>
+        <a th:if="${#authorization.expression('isAuthenticated()')}" th:href="@{/logout}">Logga ut</a>
+    </nav>
+</header>
+
+<h1>Välkommen, <span sec:authentication="name"></span>!</h1>
+
+<h2>Tillgängliga Träningspass</h2>
+
+<form th:action="@{/memberPage}" method="get">
+    <input type="text" name="search" placeholder="Sök efter träningspass..." />
+    <button type="submit">Sök</button>
+</form>
+
+<form th:action="@{/memberPage(reset=true, search=${search}, sort=${sort})}" method="get">
+    <button type="submit">Återställ till ursprunglig lista</button>
+</form>
+    <div class="day-buttons">
+
+    <button onclick="toggleSchedule('monday')">Måndag</button>
+    <button onclick="toggleSchedule('tuesday')">Tisdag</button>
+    <button onclick="toggleSchedule('wednesday')">Onsdag</button>
+    <button onclick="toggleSchedule('thursday')">Torsdag</button>
+    <button onclick="toggleSchedule('friday')">Fredag</button>
+    <button onclick="toggleSchedule('saturday')">Lördag</button>
+    <button onclick="toggleSchedule('sunday')">Söndag</button>
+
+    </div>
+
+    <div th:each="day : ${daysOfWeek}">
+        <div class="day-schedule" th:attr="id=${#strings.toLowerCase(day.name())}" style="display:none;">
+            <h3 th:switch="${day}">
+                <span th:case="MONDAY">Måndag</span>
+                <span th:case="TUESDAY">Tisdag</span>
+                <span th:case="WEDNESDAY">Onsdag</span>
+                <span th:case="THURSDAY">Torsdag</span>
+                <span th:case="FRIDAY">Fredag</span>
+                <span th:case="SATURDAY">Lördag</span>
+                <span th:case="SUNDAY">Söndag</span>
+            </h3>
+
+            <div style="display: flex; gap: 2rem;">
+                <!-- Matta 1 -->
+                <div style="flex: 1;">
+                    <h4>Matta 1</h4>
+                    <div th:each="trainingClass : ${matta1Pass}">
+                        <div th:if="${trainingClass.trainingDay == day}">
+                            <div class="class-info">
+                                <strong th:text="${trainingClass.title}">Titel</strong><br>
+                                <span th:text="${trainingClass.description}">Beskrivning</span><br>
+                                <span th:text="${#temporals.format(trainingClass.startTime, 'HH:mm')}"></span> -
+                                <span th:text="${#temporals.format(trainingClass.endTime, 'HH:mm')}"></span><br>
+                                Tränare:
+                                <span th:text="${trainingClass.trainer != null ? trainingClass.trainer.username : 'Ej tilldelad'}"></span>
+                            </div>
+
+                            <form th:action="@{/memberPage/{memberId}/bookings(memberId=${member.id})}" method="post" class="inline-form">
+                                <input type="hidden" name="trainingClassId" th:value="${trainingClass.id}" />
+                                <button type="submit" class="small-button">Boka</button>
+                            </form>
+                            <hr>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matta 2 -->
+                <div style="flex: 1;">
+                    <h4>Matta 2</h4>
+                    <div th:each="trainingClass : ${matta2Pass}">
+                        <div th:if="${trainingClass.trainingDay == day}">
+                            <div class="class-info">
+                                <strong th:text="${trainingClass.title}">Titel</strong><br>
+                                <span th:text="${trainingClass.description}">Beskrivning</span><br>
+                                <span th:text="${#temporals.format(trainingClass.startTime, 'HH:mm')}"></span> -
+                                <span th:text="${#temporals.format(trainingClass.endTime, 'HH:mm')}"></span><br>
+                                Tränare:
+                                <span th:text="${trainingClass.trainer != null ? trainingClass.trainer.username : 'Ej tilldelad'}"></span>
+                            </div>
+
+                            <form th:action="@{/memberPage/{memberId}/bookings(memberId=${member.id})}" method="post" class="inline-form">
+                                <input type="hidden" name="trainingClassId" th:value="${trainingClass.id}" />
+                                <button type="submit" class="small-button">Boka</button>
+                            </form>
+                            <hr>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visa alla pass om ingen dag är vald
+<div class="all-classes">
+    <h3>Alla träningspass</h3>
+    <table>
+        <thead>
+        <tr>
+            <th>Titel</th>
+            <th>Beskrivning</th>
+            <th>Dag</th>
+            <th>Starttid</th>
+            <th>Sluttid</th>
+            <th>Tränare</th>
+            <th>Åtgärd</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="trainingClass : ${trainingClasses}">
+            <td th:text="${trainingClass.title}">Titel</td>
+            <td th:text="${trainingClass.description}">Beskrivning</td>
+            <td th:text="${trainingClass.trainingDay}">Dag</td>
+            <td th:text="${#temporals.format(trainingClass.startTime, 'HH:mm')}">Start</td>
+            <td th:text="${#temporals.format(trainingClass.endTime, 'HH:mm')}">Slut</td>
+            <td th:text="${trainingClass.trainer != null ? trainingClass.trainer.username : 'Ej tilldelad'}">Tränare</td>
+            <td>
+                <form th:action="@{/memberPage/{memberId}/bookings(memberId=${member.id})}" method="post">
+                    <input type="hidden" name="trainingClassId" th:value="${trainingClass.id}" />
+                    <button type="submit">Boka</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+-->
+
+<h2>Bokade Träningspass</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Titel</th>
+        <th>Beskrivning</th>
+        <th>Dag</th>
+        <th>Starttid</th>
+        <th>Sluttid</th>
+        <th>Tränare</th>
+        <th>Bokningsdatum</th>
+        <th>Åtgärd</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="booking : ${bookings}">
+        <td th:text="${booking.trainingClass.title}">Titel</td>
+        <td th:text="${booking.trainingClass.description}">Beskrivning</td>
+        <td th:text="${booking.trainingClass.trainingDay}">Dag</td>
+        <td th:text="${#temporals.format(booking.trainingClass.startTime, 'HH:mm')}">Start</td>
+        <td th:text="${#temporals.format(booking.trainingClass.endTime, 'HH:mm')}">Slut</td>
+        <td th:text="${booking.trainingClass.trainer != null ? booking.trainingClass.trainer.username : 'Ej tilldelad'}">Tränare</td>
+        <td th:text="${#temporals.format(booking.bookingDate, 'yyyy-MM-dd')}">Datum</td>
+        <td>
+            <form th:action="@{/memberPage/bookings/{bookingId}(bookingId=${booking.id})}" method="post" onsubmit="return confirm('Är du säker på att du vill avboka detta träningspass?');">
+                <input type="hidden" name="_method" value="delete"/>
+                <button type="submit">Avboka</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<footer class="footer">
+    <p>Kontaktinformation: info@jarnvilja.se | Telefon: 012-345 67 89</p>
+    <p>
+        <a href="https://www.facebook.com/jarnvilja">Facebook</a> |
+        <a href="https://www.instagram.com/jarnvilja">Instagram</a> |
+        <a href="https://www.twitter.com/jarnvilja">Twitter</a>
+    </p>
+    <p>Adress: Järnvägsgatan 1, 123 45 Staden</p>
+    <p>
+        <a th:href="@{integritetspolicy}">Integritetspolicy</a> |
+        <a th:href="@{faq}">Vanliga frågor</a>
+    </p>
+</footer>
+
+<script>
+    function toggleSchedule(dayId) {
+        const schedules = document.querySelectorAll('.day-schedule');
+        const clickedSchedule = document.getElementById(dayId);
+
+        // Toggle
+        schedules.forEach(s => {
+            if (s !== clickedSchedule) {
+                s.style.display = 'none';
+            }
+        });
+
+        // Visa/dölj vald dag
+        if (clickedSchedule.style.display === 'none' || clickedSchedule.style.display === '') {
+            clickedSchedule.style.display = 'block';
+        } else {
+            clickedSchedule.style.display = 'none';
+        }
+    }
+
+    // Lägg till klick utanför för att stänga
+    document.addEventListener('click', function (event) {
+        const isClickOnDay = event.target.closest('.day-buttons');
+        const isClickInSchedule = event.target.closest('.day-schedule');
+
+        if (!isClickOnDay && !isClickInSchedule) {
+            const schedules = document.querySelectorAll('.day-schedule');
+            schedules.forEach(s => s.style.display = 'none');
+        }
+    });
+</script>
+
+</main>
+</body>
+</html>

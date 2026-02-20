@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Bli Medlem på Järnvilja Kampsport</title>
+    <link rel="stylesheet" th:href="@{/styles.css}">
+
+</head>
+<body>
+
+<header>
+    <nav>
+        <a th:href="@{/index}">Startsida</a>
+        <a th:href="@{/om_klubben}">Om klubben</a>
+        <a th:href="@{/tranare}">Våra tränare</a>
+        <a th:href="@{/traningsschema}">Träningsschema</a>
+        <a th:href="@{/bli_medlem}">Bli Medlem</a>
+        <a th:href="@{/kontakt}">Kontakt</a>
+        <a th:if="${!#authorization.expression('isAuthenticated()')}" th:href="@{/login}">Logga in</a>
+        <a th:if="${#authorization.expression('isAuthenticated()')}" th:href="@{/logout}">Logga ut</a>
+    </nav>
+</header>
+
+<section>
+    <h2>1. Välj medlemskap eller träningskort</h2>
+    <p>Klicka på ett alternativ för att se detaljer och priser:</p>
+    <ul>
+        <li><a href="#" onclick="showModal('månadsmedlemskap')">Månadsmedlemskap (12, 6 eller 3 månader)</a></li>
+        <li><a href="#" onclick="showModal('autogiro-bundet')">Autogiro (12 månader, bundet)</a></li>
+        <li><a href="#" onclick="showModal('autogiro-obundet')">Autogiro (Obundet)</a></li>
+        <li><a href="#" onclick="showModal('10-klippkort')">10-klippkort</a></li>
+        <li><a href="#" onclick="showModal('engångspass')">Engångspass</a></li>
+    </ul>
+</section>
+
+<section>
+    <h2>2. Registrera dig och skapa ditt konto</h2>
+    <form action="#" method="post">
+        <label for="firstName">Förnamn:</label>
+        <input type="text" id="firstName" name="firstName" required><br>
+        <label for="lastName">Efternamn:</label>
+        <input type="text" id="lastName" name="lastName" required><br>
+        <label for="birthDate">Födelsedatum:</label>
+        <input type="date" id="birthDate" name="birthDate" required><br>
+        <label for="email">E-postadress:</label>
+        <input type="email" id="email" name="email" required><br>
+        <label for="phone">Telefonnummer:</label>
+        <input type="tel" id="phone" name="phone" required><br>
+        <label for="membership">Välj medlemskap/träningskort:</label>
+        <select id="membership" name="membership" required>
+            <option value="barnmedlemskap">Barnmedlemskap</option>
+            <option value="engångspass">Engångspass</option>
+            <option value="vuxenmedlemskap">Vuxenmedlemskap</option>
+        </select><br>
+        <label for="payment">Betalning:</label>
+        <select id="payment" name="payment" required>
+            <option value="kort">Kortbetalning</option>
+            <option value="swish">Swish</option>
+        </select>
+        <p>Jag godkänner <a href="#" onclick="showModal('regler')">Klubbens regler och villkor</a>.</p>
+        <button type="submit">Registrera</button>
+    </form>
+</section>
+
+<section>
+    <h2>3. Bekräftelse och Välkomstpaket</h2>
+    <p>När din registrering och betalning är genomförd får du en bekräftelse via e-post, samt ett välkomstpaket med all information du behöver för att komma igång på gymmet.</p>
+</section>
+
+<footer>
+    <p>Kontaktinformation: info@jarnvilja.se | Telefon: 012-345 67 89</p>
+    <p>
+        <a href="https://www.facebook.com/jarnvilja">Facebook</a> |
+        <a href="https://www.instagram.com/jarnvilja">Instagram</a> |
+        <a href="https://www.twitter.com/jarnvilja">Twitter</a>
+    </p>
+    <p>Adress: Järnvägsgatan 1, 123 45 Staden</p>
+    <p>
+        <a th:href="@{integritetspolicy}">Integritetspolicy</a> |
+        <a th:href="@{faq}">Vanliga frågor</a>
+    </p>
+</footer>
+
+<script>
+    function showModal(modalType) {
+        const modalBody = document.getElementById('modal-body');
+        let content = '';
+
+        switch (modalType) {
+            case 'månadsmedlemskap':
+                content = `
+                    <h2>Månadsmedlemskap</h2>
+                    <p>📌 Träna fritt på alla pass under vald period.</p>
+                    <table>
+                        <tr><th>Period</th><th>Ordinarie</th><th>Student/Arbetslös</th><th>Ungdom</th></tr>
+                        <tr><td>12 mån</td><td>6000 kr</td><td>4800 kr</td><td>4000 kr</td></tr>
+                        <tr><td>6 mån</td><td>3600 kr</td><td>3000 kr</td><td>2500 kr</td></tr>
+                        <tr><td>3 mån</td><td>2000 kr</td><td>1600 kr</td><td>1300 kr</td></tr>
+                    </table>`;
+                break;
+
+            case 'autogiro-bundet':
+                content = `
+                    <h2>Autogiro Bundet</h2>
+                    <table>
+                        <tr><th>Typ</th><th>Ordinarie</th><th>Student</th><th>Ungdom</th></tr>
+                        <tr><td>12 mån</td><td>500 kr/mån</td><td>400 kr/mån</td><td>350 kr/mån</td></tr>
+                    </table>`;
+                break;
+
+            case 'autogiro-obundet':
+                content = `
+                    <h2>Autogiro Obundet</h2>
+                    <table>
+                        <tr><th>Typ</th><th>Ordinarie</th><th>Student</th><th>Ungdom</th></tr>
+                        <tr><td>Obundet</td><td>600 kr/mån</td><td>500 kr/mån</td><td>400 kr/mån</td></tr>
+                    </table>`;
+                break;
+
+            case '10-klippkort':
+                content = `
+                    <h2>10-klippkort</h2>
+                    <table>
+                        <tr><th>Typ</th><th>Ordinarie</th><th>Student</th><th>Ungdom</th></tr>
+                        <tr><td>10 gånger</td><td>1200 kr</td><td>1000 kr</td><td>900 kr</td></tr>
+                    </table>`;
+                break;
+
+            case 'engångspass':
+                content = `
+                    <h2>Engångspass</h2>
+                    <table>
+                        <tr><th>Typ</th><th>Ordinarie</th><th>Student</th><th>Ungdom</th></tr>
+                        <tr><td>1 gång</td><td>150 kr</td><td>120 kr</td><td>100 kr</td></tr>
+                    </table>`;
+                break;
+
+            case 'regler':
+                content = `
+                    <h2>Regler och villkor</h2>
+                    <p>📌 Alla medlemmar förväntas följa våra trivsel- och säkerhetsregler.</p>
+                    <p>📌 Läs mer på vår <a href="regler.html">regelsida</a>.</p>`;
+                break;
+
+            default:
+                content = `<p>Ingen information tillgänglig.</p>`;
+        }
+
+        modalBody.innerHTML = content;
+        document.getElementById('modal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('modal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    };
+</script>
+
+</body>
+</html>
