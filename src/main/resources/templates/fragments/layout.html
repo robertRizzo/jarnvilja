@@ -6,12 +6,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" th:content="${_csrf != null ? _csrf.token : ''}" />
+    <meta name="description" content="Järnvilja Kampsport – Thaiboxning, BJJ, Boxning i Kampsportsstaden">
+    <meta property="og:title" th:content="${title}">
+    <meta property="og:description" content="Boka träningspass och utforska Järnvilja Kampsport">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/favicon.svg}">
     <title th:text="${title}">Järnvilja Kampsport</title>
     <link rel="stylesheet" th:href="@{/styles.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
     <script th:src="@{/js/common.js}" defer></script>
 </head>
 
 <header th:fragment="header" role="banner">
+    <a href="#main-content" class="skip-link">Hoppa till innehåll</a>
     <nav role="navigation" aria-label="Huvudnavigation">
         <a th:href="@{/index}" th:classappend="${currentPath == '/index' || currentPath == '/'} ? 'active-link'">Startsida</a>
         <a th:href="@{/om_klubben}" th:classappend="${currentPath == '/om_klubben'} ? 'active-link'">Om klubben</a>
@@ -29,7 +36,7 @@
 </header>
 
 <div th:fragment="toasts">
-    <div class="toast-container">
+    <div class="toast-container" aria-live="polite">
         <div th:if="${successMessage}" class="toast toast-success" th:text="${successMessage}"></div>
         <div th:if="${bookingMessage}" class="toast toast-info" th:text="${bookingMessage}"></div>
         <div th:if="${errorMessage}" class="toast toast-error" th:text="${errorMessage}"></div>
@@ -42,8 +49,8 @@
             <h3>Bekräfta</h3>
             <p></p>
             <div class="confirm-modal-actions">
-                <button class="btn-confirm">Bekräfta</button>
-                <button class="btn-cancel-modal">Avbryt</button>
+                <button class="btn-primary btn-confirm">Bekräfta</button>
+                <button class="btn-ghost btn-cancel-modal">Avbryt</button>
             </div>
         </div>
     </div>

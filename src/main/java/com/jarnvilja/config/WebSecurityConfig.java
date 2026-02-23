@@ -13,9 +13,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.net.URI;
+import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
@@ -34,12 +38,13 @@ public class WebSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/trainer/**", "/bookings/**")
+                .ignoringRequestMatchers("/h2-console/**")
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/index", "/login", "/register", "/bli_medlem", "/faq", "/integritetspolicy",
                         "/kontakt", "/om_klubben", "/tranare", "/traningsschema", "/om_projektet",
-                        "/error", "/styles.css", "/js/**", "/images/**").permitAll()
+                        "/forgot-password", "/reset-password",
+                        "/error", "/h2-console/**", "/styles.css", "/js/**", "/images/**").permitAll()
                 .requestMatchers("/adminPage/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/memberPage/**").hasAuthority("ROLE_MEMBER")
                 .requestMatchers("/trainerPage/**").hasAuthority("ROLE_TRAINER")
@@ -51,6 +56,12 @@ public class WebSecurityConfig {
                 .successHandler(customAuthenticationSuccessHandler())
                 .failureUrl("/login?error=true")
                 .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessHandler(customLogoutSuccessHandler())
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -73,6 +84,28 @@ public class WebSecurityConfig {
             } else {
                 response.sendRedirect("/memberPage");
             }
+        };
+    }
+
+    private static final Set<String> PUBLIC_PATHS = Set.of(
+            "/", "/index", "/login", "/register", "/bli_medlem", "/faq",
+            "/integritetspolicy", "/kontakt", "/om_klubben", "/tranare",
+            "/traningsschema", "/om_projektet", "/forgot-password", "/reset-password");
+
+    @Bean
+    public LogoutSuccessHandler customLogoutSuccessHandler() {
+        return (request, response, authentication) -> {
+            String referer = request.getHeader("Referer");
+            String target = "/login";
+            if (referer != null) {
+                try {
+                    String path = URI.create(referer).getPath();
+                    if (PUBLIC_PATHS.contains(path)) {
+                        target = path;
+                    }
+                } catch (Exception ignored) {}
+            }
+            response.sendRedirect(target);
         };
     }
 

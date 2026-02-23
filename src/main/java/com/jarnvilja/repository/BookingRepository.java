@@ -2,6 +2,7 @@ package com.jarnvilja.repository;
 
 import com.jarnvilja.model.Booking;
 import com.jarnvilja.model.BookingStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,7 +34,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findBookingsByDateBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     @Query("SELECT b FROM Booking b WHERE b.member.id = :memberId")
-    List<Booking> findMemberId(@Param("memberId") Long memberId);
+    List<Booking> findBookingsByMemberId(@Param("memberId") Long memberId);
 
     @Query("SELECT b.trainingClass.title, COUNT(b.id) FROM Booking b GROUP BY b.trainingClass.title")
     List<Object[]> getClassStats();
@@ -44,6 +45,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByBookingStatus(BookingStatus status);
 
+    @EntityGraph(attributePaths = {"trainingClass", "member"})
     List<Booking> findByMemberId(Long memberId);
 
     void deleteByTrainingClassId(Long trainingClassId);
@@ -60,5 +62,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findPastBookingsForMember(@Param("memberId") Long memberId, @Param("today") LocalDate today);
 
     long countByTrainingClassId(Long trainingClassId);
+
+    long countByTrainingClassIdAndBookingDateAndBookingStatusIn(
+            Long trainingClassId, LocalDate bookingDate, List<BookingStatus> statuses);
 
 }

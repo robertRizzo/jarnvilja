@@ -49,18 +49,21 @@ public class UserSeeder implements CommandLineRunner {
             demoMember.setEmail("demo_member@example.com");
             demoMember.setPassword(passwordEncoder.encode("demo123"));
             demoMember.setRole(ROLE_MEMBER);
+            demoMember.setDemo(true);
 
             User demoAdmin = new User();
             demoAdmin.setUsername("demo_admin");
             demoAdmin.setEmail("demo_admin@example.com");
             demoAdmin.setPassword(passwordEncoder.encode("demo123"));
             demoAdmin.setRole(ROLE_ADMIN);
+            demoAdmin.setDemo(true);
 
             User demoTrainer = new User();
             demoTrainer.setUsername("demo_trainer");
             demoTrainer.setEmail("demo_trainer@example.com");
             demoTrainer.setPassword(passwordEncoder.encode("demo123"));
             demoTrainer.setRole(ROLE_TRAINER);
+            demoTrainer.setDemo(true);
 
             userRepository.save(admin);
             userRepository.save(member);

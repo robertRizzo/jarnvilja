@@ -537,11 +537,11 @@ public class AdminServiceTest {
                 new Booking(user, trainingClass)
         );
 
-        when(bookingRepository.findMemberId(memberId)).thenReturn(mockBookings);
+        when(bookingRepository.findBookingsByMemberId(memberId)).thenReturn(mockBookings);
         List<Booking> result = adminService.getAllBookingsForMember(memberId);
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(bookingRepository, times(1)).findMemberId(memberId);
+        verify(bookingRepository, times(1)).findBookingsByMemberId(memberId);
 
     }
 

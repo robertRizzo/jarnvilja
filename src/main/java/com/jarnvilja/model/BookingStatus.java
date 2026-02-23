@@ -5,5 +5,6 @@ public enum BookingStatus {
     CANCELLED,
     PENDING,
     CANCELLED_BY_MEMBER,
-    EXPIRED
+    EXPIRED,
+    WAITLISTED
 }

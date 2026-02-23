@@ -12,15 +12,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static com.jarnvilja.model.BookingStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,9 +60,12 @@ public class BookingServiceTest {
         user.setId(1L);
         user.setUsername("testUser");
 
-        trainingClass = new TrainingClass("BJJ", "Brazilian Jiu-Jitsu class", DayOfWeek.TUESDAY, Matta.MATTA_1, LocalTime.of(17, 0), LocalTime.of(18,0));
+        DayOfWeek today = LocalDate.now().getDayOfWeek();
+        trainingClass = new TrainingClass("BJJ", "Brazilian Jiu-Jitsu class", today, Matta.MATTA_1, LocalTime.of(17, 0), LocalTime.of(18,0));
         trainingClass.setId(1L);
         trainingClass.setTitle("BJJ");
+        trainingClass.setStartTime(LocalTime.now().plusHours(1));
+        trainingClass.setMaxCapacity(20);
 
         LocalDateTime now = LocalDateTime.now();
         booking = new Booking(user, trainingClass);
@@ -92,11 +99,15 @@ public class BookingServiceTest {
 
     // Bokning:
 
-    // createBooking()                        // Testar skapandet av en bokning
+    // createBooking()                        // Testar skapandet av en bokning (idag, kapacitet)
     @Test
     void testCreateBooking() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(trainingClassRepository.findById(1L)).thenReturn(Optional.of(trainingClass));
+        when(bookingRepository.findByMemberIdAndTrainingClassIdAndBookingDate(1L, 1L, LocalDate.now()))
+                .thenReturn(Collections.emptyList());
+        when(bookingRepository.countByTrainingClassIdAndBookingDateAndBookingStatusIn(
+                eq(1L), eq(LocalDate.now()), anyList())).thenReturn(0L);
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
 
         Booking createdBooking = bookingService.createBooking(1L, 1L);
@@ -152,14 +163,14 @@ public class BookingServiceTest {
     void testGetAllBookingsByMemberId() {
         List<Booking> mockBookings = List.of(booking2, booking3, booking4);
 
-        when(bookingRepository.findMemberId(1L)).thenReturn(mockBookings);
+        when(bookingRepository.findBookingsByMemberId(1L)).thenReturn(mockBookings);
 
         List<Booking> result = bookingService.getAllBookingsByMemberId(1L);
 
         assertNotNull(result);
         assertEquals(3, result.size());
         assertEquals("BJJ", result.get(0).getTrainingClass().getTitle());
-        verify(bookingRepository, times(1)).findMemberId(1L);
+        verify(bookingRepository, times(1)).findBookingsByMemberId(1L);
     }
 
 
@@ -184,17 +195,17 @@ public class BookingServiceTest {
     // validateBookingTime()                  // Testar om bokningstiden är korrekt (t.ex. ej för sent)
     @Test
     void testValidateBookingTime() {
-        LocalDateTime beforeClassStarts = LocalDateTime.of(2025, 3, 11, 16, 59);
-        Booking validBooking = new Booking(user, trainingClass);
+        TrainingClass tc = new TrainingClass("BJJ", "desc", DayOfWeek.TUESDAY, Matta.MATTA_1, LocalTime.of(17, 0), LocalTime.of(18, 0));
+        LocalDateTime beforeClassStarts = LocalDateTime.of(2025, 3, 11, 16, 59); // Tuesday
+        Booking validBooking = new Booking(user, tc);
         validBooking.setBookingTimeStamp(beforeClassStarts);
 
         LocalDateTime afterClassStarts = LocalDateTime.of(2025, 3, 11, 17, 1);
-        Booking lateBooking = new Booking(user, trainingClass);
+        Booking lateBooking = new Booking(user, tc);
         lateBooking.setBookingTimeStamp(afterClassStarts);
 
-        assertTrue(bookingService.validateBookingTime(validBooking, trainingClass), "Bokningen borde vara giltig (gjord innan passet börjar");
-        assertFalse(bookingService.validateBookingTime(lateBooking, trainingClass), "Bokningen borde vara ogiltig (gjord efter passet har börjat");
-
+        assertTrue(bookingService.validateBookingTime(validBooking, tc), "Bokningen borde vara giltig (gjord innan passet börjar");
+        assertFalse(bookingService.validateBookingTime(lateBooking, tc), "Bokningen borde vara ogiltig (gjord efter passet har börjat");
     }
 
 

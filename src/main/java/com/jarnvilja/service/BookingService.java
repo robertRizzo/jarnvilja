@@ -11,7 +11,10 @@ import com.jarnvilja.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,20 +47,50 @@ public class BookingService {
 
     // Bokning
 
-
+    /**
+     * Creates a booking for the given member and class. Validates: class not started,
+     * member not already booked for today, and enforces max capacity (waitlist if full).
+     */
     @Transactional
     public Booking createBooking(Long userId, Long trainingClassId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User  not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         TrainingClass trainingClass = trainingClassRepository.findById(trainingClassId)
                 .orElseThrow(() -> new RuntimeException("Training class not found"));
 
+        LocalDate today = LocalDate.now();
+        DayOfWeek todayDay = today.getDayOfWeek();
+
+        if (!trainingClass.getTrainingDay().equals(todayDay)) {
+            throw new RuntimeException("Passet är inte idag.");
+        }
+        if (trainingClass.getStartTime().isBefore(LocalTime.now())) {
+            throw new RuntimeException("Passet har redan startat.");
+        }
+
+        List<Booking> existing = bookingRepository.findByMemberIdAndTrainingClassIdAndBookingDate(
+                userId, trainingClassId, today);
+        boolean alreadyBooked = existing.stream()
+                .anyMatch(b -> b.getBookingStatus() != BookingStatus.CANCELLED
+                        && b.getBookingStatus() != BookingStatus.CANCELLED_BY_MEMBER
+                        && b.getBookingStatus() != BookingStatus.EXPIRED);
+        if (alreadyBooked) {
+            throw new RuntimeException("Du har redan bokat detta pass idag.");
+        }
+
+        List<BookingStatus> countedStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.WAITLISTED);
+        long currentCount = bookingRepository.countByTrainingClassIdAndBookingDateAndBookingStatusIn(
+                trainingClassId, today, countedStatuses);
+        int maxCapacity = trainingClass.getMaxCapacity() > 0 ? trainingClass.getMaxCapacity() : 20;
+        BookingStatus status = (currentCount >= maxCapacity) ? BookingStatus.WAITLISTED : BookingStatus.CONFIRMED;
+
         Booking booking = new Booking();
         booking.setMember(user);
         booking.setTrainingClass(trainingClass);
-        booking.setBookingStatus(BookingStatus.CONFIRMED); // Sätt status till CONFIRMED
-        booking.setBookingTimeStamp(LocalDateTime.now()); // Sätt tidsstämpel
+        booking.setBookingStatus(status);
+        booking.setBookingTimeStamp(LocalDateTime.now());
+        booking.setBookingDate(today);
 
         return bookingRepository.save(booking);
     }
@@ -85,7 +118,7 @@ public class BookingService {
     }
 
     public List<Booking> getAllBookingsByMemberId(Long memberId) {
-        return bookingRepository.findMemberId(memberId);
+        return bookingRepository.findBookingsByMemberId(memberId);
     }
 
     public boolean isBookingValid(Booking booking) {
@@ -113,6 +146,15 @@ public class BookingService {
     public int getTotalBookingsForClass(Long trainingClassId) {
        List<Booking> totalBookingsForClass = bookingRepository.findByTrainingClassId(trainingClassId);
        return totalBookingsForClass.size();
+    }
+
+    /**
+     * Count of CONFIRMED + WAITLISTED bookings for the given class on the given date (for capacity display).
+     */
+    public int getConfirmedCountForClassOnDate(Long trainingClassId, LocalDate date) {
+        List<BookingStatus> statuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.WAITLISTED);
+        return (int) bookingRepository.countByTrainingClassIdAndBookingDateAndBookingStatusIn(
+                trainingClassId, date, statuses);
     }
 
     public int getTotalBookingsForMember(Long memberId) {

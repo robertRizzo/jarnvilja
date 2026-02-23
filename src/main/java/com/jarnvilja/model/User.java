@@ -1,6 +1,9 @@
 package com.jarnvilja.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,18 +23,36 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Email
+    @NotBlank
     @Column(unique = true, nullable = false)
     private String email;
 
+    @NotBlank
+    @Size(min = 3, max = 50)
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
+    @NotBlank
+    @Size(min = 8)
     @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "is_demo", nullable = false)
+    private boolean demo = false;
+
+    @Column(name = "profile_visible", nullable = false)
+    private boolean profileVisible = true;
 
     @Column(name = "created_at")
     private LocalDate createdAt;

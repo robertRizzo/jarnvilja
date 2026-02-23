@@ -6,15 +6,13 @@ import com.jarnvilja.model.*;
 import com.jarnvilja.repository.BookingRepository;
 import com.jarnvilja.repository.TrainingClassRepository;
 import com.jarnvilja.repository.UserRepository;
+import org.springframework.data.domain.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -73,6 +71,66 @@ public class AdminService {
 
     public List<User> getUsersByRole(Role role) {
         return userRepository.findUsersByRole(role);
+    }
+
+    /**
+     * Paginated user list with optional role and username search. Sort by "bookings" is done in-memory.
+     */
+    public Page<User> getUsersPage(Role role, String search, String sortBy, int page, int size,
+                                   Map<Long, Long> bookingCounts) {
+        Pageable pageable;
+        String sortField = "username";
+        boolean descending = false;
+        if (!"bookings".equals(sortBy)) {
+            switch (sortBy != null ? sortBy : "username") {
+                case "role" -> { sortField = "role"; }
+                case "email" -> { sortField = "email"; }
+                case "createdAt" -> { sortField = "createdAt"; descending = true; }
+                default -> { sortField = "username"; }
+            }
+            Sort sort = descending ? Sort.by(sortField).descending() : Sort.by(sortField).ascending();
+            pageable = PageRequest.of(page, size, sort);
+        } else {
+            pageable = PageRequest.of(page, size);
+        }
+
+        Page<User> usersPage;
+        boolean hasRole = role != null && !role.name().isEmpty();
+        boolean hasSearch = search != null && !search.isBlank();
+
+        if (hasRole && hasSearch) {
+            usersPage = userRepository.findUsersByRoleAndUsernameContainingIgnoreCase(role, search.trim(), pageable);
+        } else if (hasRole) {
+            usersPage = userRepository.findUsersByRole(role, pageable);
+        } else if (hasSearch) {
+            usersPage = userRepository.findByUsernameContainingIgnoreCase(search.trim(), pageable);
+        } else {
+            usersPage = userRepository.findAll(pageable);
+        }
+
+        if ("bookings".equals(sortBy)) {
+            List<User> allFiltered;
+            if (hasRole && hasSearch) {
+                allFiltered = userRepository.findUsersByRoleAndUsernameContainingIgnoreCase(role, search.trim(), Pageable.unpaged()).getContent();
+            } else if (hasRole) {
+                allFiltered = userRepository.findUsersByRole(role, Pageable.unpaged()).getContent();
+            } else if (hasSearch) {
+                allFiltered = userRepository.findByUsernameContainingIgnoreCase(search.trim(), Pageable.unpaged()).getContent();
+            } else {
+                allFiltered = userRepository.findAll();
+            }
+            allFiltered.sort(Comparator.comparingLong((User u) -> bookingCounts.getOrDefault(u.getId(), 0L)).reversed());
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), allFiltered.size());
+            List<User> pageContent = start >= allFiltered.size() ? List.of() : allFiltered.subList(start, end);
+            return new PageImpl<>(pageContent, pageable, allFiltered.size());
+        }
+
+        return usersPage;
+    }
+
+    public Page<Booking> getBookingsPage(int page, int size) {
+        return bookingRepository.findAll(PageRequest.of(page, size));
     }
 
     @Transactional
@@ -228,7 +286,7 @@ public class AdminService {
     }
 
     public List<Booking> getAllBookingsForMember(Long memberId) {
-        return bookingRepository.findMemberId(memberId);
+        return bookingRepository.findBookingsByMemberId(memberId);
     }
 
     public Map<String, Long> getClassStats() {

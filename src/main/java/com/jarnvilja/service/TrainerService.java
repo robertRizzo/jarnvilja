@@ -8,6 +8,7 @@ import com.jarnvilja.model.User;
 import com.jarnvilja.repository.BookingRepository;
 import com.jarnvilja.repository.TrainingClassRepository;
 import com.jarnvilja.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 
+@Slf4j
 @Service
 public class TrainerService {
 
@@ -97,12 +99,15 @@ public class TrainerService {
             throw new RuntimeException("Du har inte behörighet att skicka påminnelser för detta pass");
         }
 
-        // Skicka påminnelse till tränaren
-        emailService.sendEmail(
-                trainingClass.getTrainer().getEmail(),
-                "Påminnelse: " + trainingClass.getTitle(),
-                "Ditt pass: '" + trainingClass.getTitle() + "' startar snart!"
-        );
+        try {
+            emailService.sendEmail(
+                    trainingClass.getTrainer().getEmail(),
+                    "Påminnelse: " + trainingClass.getTitle(),
+                    "Ditt pass: '" + trainingClass.getTitle() + "' startar snart!"
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send email: {}", e.getMessage());
+        }
     }
 
     @Transactional
@@ -113,23 +118,29 @@ public class TrainerService {
         // Markera passet som inställt
         trainingClass.setStatus(ClassStatus.CANCELLED);
 
-        // Skicka bekräftelse till tränaren
-        emailService.sendEmail(
-                trainingClass.getTrainer().getEmail(),
-                "Träningspass inställt",
-                "Du har ställt in passet '" + trainingClass.getTitle() + "'."
-        );
+        try {
+            emailService.sendEmail(
+                    trainingClass.getTrainer().getEmail(),
+                    "Träningspass inställt",
+                    "Du har ställt in passet '" + trainingClass.getTitle() + "'."
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send email: {}", e.getMessage());
+        }
 
-        // Markera alla bokningar som inställda
         if (trainingClass.getBookings() != null) {
             for (Booking booking : trainingClass.getBookings()) {
-                booking.setBookingStatus(BookingStatus.CANCELLED); // Uppdaterar status på bokning
+                booking.setBookingStatus(BookingStatus.CANCELLED);
 
-                emailService.sendEmail(
-                        booking.getMember().getEmail(),
-                        "Träningspass inställt",
-                        "Hej, ditt pass '" + trainingClass.getTitle() + "' har blivit inställt. Anledning: " + reason
-                );
+                try {
+                    emailService.sendEmail(
+                            booking.getMember().getEmail(),
+                            "Träningspass inställt",
+                            "Hej, ditt pass '" + trainingClass.getTitle() + "' har blivit inställt. Anledning: " + reason
+                    );
+                } catch (Exception e) {
+                    log.warn("Failed to send email: {}", e.getMessage());
+                }
             }
         }
 

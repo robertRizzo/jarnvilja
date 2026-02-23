@@ -27,6 +27,7 @@ import static com.jarnvilja.model.Role.ROLE_MEMBER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 public class MemberServiceTest {
@@ -42,6 +43,15 @@ public class MemberServiceTest {
 
     @Mock
     private EmailService emailService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private DemoGuard demoGuard;
+
+    @Mock
+    private BookingService bookingService;
 
     @InjectMocks
     private MemberService memberService;
@@ -63,13 +73,16 @@ public class MemberServiceTest {
         trainingClass.setId(1L);
         trainingClass.setTitle("BJJ Class");
         trainingClass.setTrainingDay(DayOfWeek.MONDAY);
+        trainingClass.setStartTime(LocalTime.of(17, 0));
+        trainingClass.setEndTime(LocalTime.of(18, 0));
 
         booking = new Booking(member, trainingClass);
         booking.setId(1L);
         booking.setBookingStatus(BookingStatus.PENDING);
         booking.setBookingDate(LocalDate.now());
 
-
+        lenient().when(demoGuard.isDemoUser()).thenReturn(false);
+        lenient().when(passwordEncoder.encode(any(String.class))).thenAnswer(i -> i.getArgument(0));
     }
 
     // Hantera medlem:
@@ -146,7 +159,6 @@ public class MemberServiceTest {
         assertEquals("member@example.com", result.getEmail());
     }
 
-    // updateMemberPassword()        // Uppdatera medlemmens lösenord
     @Test
     void testUpdateMemberPassword() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(member));
@@ -160,21 +172,22 @@ public class MemberServiceTest {
 
     // Bokningar:
 
-    // createBooking()               // Skapa en ny bokning för medlem
+    // createBooking()               // Skapa en ny bokning för medlem (delegerar till BookingService)
     @Test
     void testCreateBooking() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(member));
-        when(trainingClassRepository.findById(1L)).thenReturn(Optional.of(trainingClass));
-        when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
+        when(demoGuard.isDemoUser()).thenReturn(false);
+        booking.setBookingStatus(BookingStatus.CONFIRMED);
+        when(bookingService.createBooking(1L, 1L)).thenReturn(booking);
 
         Booking createdBooking = memberService.createBooking(1L, 1L);
 
         assertNotNull(createdBooking);
         assertEquals(member, createdBooking.getMember());
         assertEquals(trainingClass, createdBooking.getTrainingClass());
-        assertEquals(BookingStatus.PENDING, createdBooking.getBookingStatus());
+        assertEquals(BookingStatus.CONFIRMED, createdBooking.getBookingStatus());
 
-        verify(bookingRepository, times(1)).save(any(Booking.class));
+        verify(bookingService, times(1)).createBooking(1L, 1L);
+        verify(emailService, times(1)).sendEmail(anyString(), anyString(), anyString());
     }
 
     // confirmBooking()              // Kollar att PENDING bokning blir CONFIRMED
@@ -226,15 +239,16 @@ public class MemberServiceTest {
         verify(bookingRepository, times(1)).save(pendingBooking);
     }
 
-    // cancelBooking()               // Avboka en bokning för medlem
+    // cancelBooking()               // Avboka en bokning för medlem (delegerar till BookingService, skickar e-post)
     @Test
     void testCancelBooking() {
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+        when(demoGuard.isDemoUser()).thenReturn(false);
+        when(bookingService.cancelBooking(1L)).thenReturn(booking);
 
         memberService.cancelBooking(1L);
 
-        assertEquals(BookingStatus.CANCELLED, booking.getBookingStatus());
-        verify(bookingRepository, times(1)).save(booking);
+        verify(bookingService, times(1)).cancelBooking(1L);
+        verify(emailService, times(1)).sendEmail(anyString(), anyString(), anyString());
     }
 
     // getBookingsForMember()        // Hämta alla bokningar för medlem
@@ -374,16 +388,17 @@ public class MemberServiceTest {
         verify(userRepository, times(1)).findById(memberId);
     }
 
-    // getMembershipStats()          // Hämta statistik om medlemmens bokningar och aktivitet
     @Test
     void testGetMembershipStats() {
         Long memberId = 1L;
         User member = new User(memberId, "user@example.com", "username", "password", ROLE_MEMBER);
 
-        List<Booking> bookings = Arrays.asList(
-                new Booking(member, new TrainingClass("BJJ", "BJJ class", DayOfWeek.MONDAY, Matta.MATTA_1, LocalTime.of(17, 0), LocalTime.of(18, 0))),
-                new Booking(member, new TrainingClass("Thaiboxning", "Muay Thai class", DayOfWeek.WEDNESDAY, Matta.MATTA_1, LocalTime.of(18, 0), LocalTime.of(19, 0)))
-        );
+        Booking b1 = new Booking(member, new TrainingClass("BJJ", "BJJ class", DayOfWeek.MONDAY, Matta.MATTA_1, LocalTime.of(17, 0), LocalTime.of(18, 0)));
+        b1.setBookingStatus(BookingStatus.CONFIRMED);
+        Booking b2 = new Booking(member, new TrainingClass("Thaiboxning", "Muay Thai class", DayOfWeek.WEDNESDAY, Matta.MATTA_1, LocalTime.of(18, 0), LocalTime.of(19, 0)));
+        b2.setBookingStatus(BookingStatus.CONFIRMED);
+
+        List<Booking> bookings = Arrays.asList(b1, b2);
 
         when(userRepository.findById(memberId)).thenReturn(Optional.of(member));
         when(bookingRepository.findByMemberId(memberId)).thenReturn(bookings);

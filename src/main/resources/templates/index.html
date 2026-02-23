@@ -6,9 +6,12 @@
 <header th:replace="~{fragments/layout :: header}"></header>
 
 <div class="hero">
-    <h1>Det är inte de starkaste som vinner -- det är de som aldrig slutar kämpa.</h1>
-    <p>Bli Medlem idag!</p>
-    <a th:href="@{/bli_medlem}"><button class="cta-button">Bli Medlem Idag</button></a>
+    <h1 th:text="${@contentService.get('homepage.hero.title', 'Det är inte de starkaste som vinner -- det är de som aldrig slutar kämpa.')}">Det är inte de starkaste som vinner -- det är de som aldrig slutar kämpa.</h1>
+    <p th:text="${@contentService.get('homepage.hero.subtitle', 'Bli Medlem idag!')}">Bli Medlem idag!</p>
+    <div class="hero-buttons">
+        <a th:href="@{/login}" class="btn-primary">Testa demo</a>
+        <a th:href="@{/bli_medlem}" class="btn-ghost">Bli Medlem Idag</a>
+    </div>
 </div>
 
 <main>

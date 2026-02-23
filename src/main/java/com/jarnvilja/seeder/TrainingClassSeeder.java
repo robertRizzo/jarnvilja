@@ -1,9 +1,6 @@
 package com.jarnvilja.seeder;
 
-import com.jarnvilja.model.Matta;
-import com.jarnvilja.model.Role;
-import com.jarnvilja.model.TrainingClass;
-import com.jarnvilja.model.User;
+import com.jarnvilja.model.*;
 import com.jarnvilja.repository.TrainingClassRepository;
 import com.jarnvilja.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -33,11 +30,20 @@ public class TrainingClassSeeder implements CommandLineRunner {
         this.passwordEncoder = passwordEncoder;
     }
 
+    private TrainingCategory inferCategory(String title) {
+        String lower = title.toLowerCase();
+        if (lower.contains("bjj")) return TrainingCategory.BJJ;
+        if (lower.contains("thaiboxning")) return TrainingCategory.THAIBOXNING;
+        if (lower.contains("boxning")) return TrainingCategory.BOXNING;
+        if (lower.contains("fys")) return TrainingCategory.FYS;
+        if (lower.contains("sparring")) return TrainingCategory.SPARRING;
+        return TrainingCategory.BJJ;
+    }
+
     private void createOrUpdateTrainingClass(String title, String description, DayOfWeek day, Matta matta, LocalTime startTime, LocalTime endTime, User trainer) {
         Optional<TrainingClass> existingClass = trainingClassRepository.findByTitleAndTrainingDayAndStartTime(title, day, startTime);
 
         if (existingClass.isEmpty()) {
-            // Skapa en ny klass om den inte finns
             TrainingClass trainingClass = new TrainingClass();
             trainingClass.setTitle(title);
             trainingClass.setDescription(description);
@@ -46,6 +52,8 @@ public class TrainingClassSeeder implements CommandLineRunner {
             trainingClass.setStartTime(startTime);
             trainingClass.setEndTime(endTime);
             trainingClass.setTrainer(trainer);
+            trainingClass.setCategory(inferCategory(title));
+            trainingClass.setMaxCapacity(20);
             trainingClassRepository.save(trainingClass);
             log.debug("Created training class '{}' for {} at {}", title, day, startTime);
         } else {

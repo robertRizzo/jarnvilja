@@ -5,12 +5,10 @@
 <body>
 <header th:replace="~{fragments/layout :: header}"></header>
 
-<main>
-    <h1>Något gick fel</h1>
-    <p th:if="${status}" th:text="'Felkod: ' + ${status}">Felkod</p>
-    <p th:if="${message}" th:text="${message}">Ett oväntat fel inträffade.</p>
-    <p th:unless="${message}">Ett oväntat fel inträffade. Försök igen senare.</p>
-    <p><a th:href="@{/index}">Tillbaka till startsidan</a></p>
+<main class="error-page" id="main-content">
+    <div class="error-code" th:text="${status}">500</div>
+    <div class="error-message" th:text="${message}">Ett oväntat fel inträffade.</div>
+    <a th:href="@{/index}" class="btn-primary">Tillbaka till startsidan</a>
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>

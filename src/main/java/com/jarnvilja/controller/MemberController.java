@@ -3,6 +3,8 @@ package com.jarnvilja.controller;
 import com.jarnvilja.dto.MemberProfileDTO;
 import com.jarnvilja.dto.MembershipStatsDTO;
 import com.jarnvilja.model.*;
+import com.jarnvilja.service.BookingService;
+import com.jarnvilja.service.DemoGuard;
 import com.jarnvilja.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,7 +20,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -27,12 +32,17 @@ import java.util.stream.Collectors;
 public class MemberController {
 
     private final MemberService memberService;
+    private final BookingService bookingService;
     private final PasswordEncoder passwordEncoder;
+    private final DemoGuard demoGuard;
 
     @Autowired
-    public MemberController(MemberService memberService, PasswordEncoder passwordEncoder) {
+    public MemberController(MemberService memberService, BookingService bookingService,
+                            PasswordEncoder passwordEncoder, DemoGuard demoGuard) {
         this.memberService = memberService;
+        this.bookingService = bookingService;
         this.passwordEncoder = passwordEncoder;
+        this.demoGuard = demoGuard;
     }
 
     @GetMapping
@@ -72,13 +82,25 @@ public class MemberController {
                 .filter(b -> !b.getBookingStatus().equals(BookingStatus.CANCELLED))
                 .collect(Collectors.toList());
         model.addAttribute("bookings", activeBookings);
+
+        List<Booking> upcomingBookings = memberService.getUpcomingBookingsForMember(member.getId());
+        List<Booking> pastBookings = memberService.getPastBookingsForMember(member.getId());
+        model.addAttribute("upcomingBookings", upcomingBookings);
+        model.addAttribute("pastBookings", pastBookings);
+
         model.addAttribute("daysOfWeek", DayOfWeek.values());
+
+        Map<Long, Integer> capacityUsed = new HashMap<>();
+        LocalDate today = LocalDate.now();
+        for (TrainingClass tc : trainingClasses) {
+            capacityUsed.put(tc.getId(), bookingService.getConfirmedCountForClassOnDate(tc.getId(), today));
+        }
+        model.addAttribute("capacityUsed", capacityUsed);
 
         MembershipStatsDTO stats = memberService.getMembershipStats(member.getId());
         model.addAttribute("stats", stats);
 
-        boolean isDemo = username.startsWith("demo");
-        model.addAttribute("onboarding", isDemo);
+        model.addAttribute("onboarding", member.isDemo());
 
         return "memberPage";
     }
@@ -140,10 +162,14 @@ public class MemberController {
             return "redirect:/memberPage";  // Omdirigera till medlemssidan med meddelandet
         }
 
-        // Om inga problem, skapa bokningen
-        memberService.createBooking(memberId, trainingClassId);
+        try {
+            memberService.createBooking(memberId, trainingClassId);
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("bookingMessage", e.getMessage());
+            return "redirect:/memberPage";
+        }
 
-        return "redirect:/memberPage"; // Om bokningen skapades, omdirigera till medlemssidan
+        return "redirect:/memberPage";
     }
 
     @PatchMapping("/bookings/{bookingId}/confirm")
@@ -208,6 +234,62 @@ public class MemberController {
     public ResponseEntity<MembershipStatsDTO> getMembershipStats(@PathVariable Long memberId) {
         MembershipStatsDTO membershipStats = memberService.getMembershipStats(memberId);
         return new ResponseEntity<>(membershipStats, HttpStatus.OK);
+    }
+
+    @PostMapping("/bookings/cancel-all")
+    @PreAuthorize("hasAuthority('ROLE_MEMBER')")
+    public String cancelAllBookings(@AuthenticationPrincipal UserDetails userDetails,
+                                    RedirectAttributes redirectAttributes) {
+        User member = memberService.getMemberByUsername(userDetails.getUsername());
+        if (demoGuard.isDemoUser()) {
+            redirectAttributes.addFlashAttribute("successMessage", "Demo: Alla bokningar avbokade (simulerat).");
+            return "redirect:/memberPage";
+        }
+        bookingService.cancelAllBookingsForMember(member.getId());
+        redirectAttributes.addFlashAttribute("successMessage", "Alla bokningar har avbokats.");
+        return "redirect:/memberPage";
+    }
+
+    @PostMapping("/profile/update")
+    @PreAuthorize("hasAuthority('ROLE_MEMBER')")
+    public String updateProfile(@AuthenticationPrincipal UserDetails userDetails,
+                                @RequestParam String email,
+                                RedirectAttributes redirectAttributes) {
+        User member = memberService.getMemberByUsername(userDetails.getUsername());
+        User updated = new User();
+        updated.setUsername(member.getUsername());
+        updated.setEmail(email);
+        memberService.updateMember(member.getId(), updated);
+        redirectAttributes.addFlashAttribute("successMessage", "Profil uppdaterad!");
+        return "redirect:/memberPage";
+    }
+
+    @PostMapping("/profile/password")
+    @PreAuthorize("hasAuthority('ROLE_MEMBER')")
+    public String changePassword(@AuthenticationPrincipal UserDetails userDetails,
+                                 @RequestParam String currentPassword,
+                                 @RequestParam String newPassword,
+                                 RedirectAttributes redirectAttributes) {
+        User member = memberService.getMemberByUsername(userDetails.getUsername());
+        if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Nuvarande lösenord är felaktigt.");
+            return "redirect:/memberPage";
+        }
+        memberService.updateMemberPassword(member.getId(), newPassword);
+        redirectAttributes.addFlashAttribute("successMessage", "Lösenord ändrat!");
+        return "redirect:/memberPage";
+    }
+
+    @PostMapping("/profile/visibility")
+    @PreAuthorize("hasAuthority('ROLE_MEMBER')")
+    public String toggleVisibility(@AuthenticationPrincipal UserDetails userDetails,
+                                   RedirectAttributes redirectAttributes) {
+        User member = memberService.getMemberByUsername(userDetails.getUsername());
+        member.setProfileVisible(!member.isProfileVisible());
+        memberService.updateMember(member.getId(), member);
+        redirectAttributes.addFlashAttribute("successMessage",
+                member.isProfileVisible() ? "Profil synlig" : "Profil dold");
+        return "redirect:/memberPage";
     }
 }
 

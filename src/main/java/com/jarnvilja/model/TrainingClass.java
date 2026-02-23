@@ -36,6 +36,13 @@ public class TrainingClass {
     private LocalTime startTime;
     private LocalTime endTime;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category")
+    private TrainingCategory category;
+
+    @Column(name = "max_capacity")
+    private int maxCapacity = 20;
+
     @ManyToOne
     @JoinColumn(name = "trainer_id")
     private User trainer;

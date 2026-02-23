@@ -43,6 +43,9 @@ public class Booking {
 
     private LocalDateTime bookingTimeStamp;
 
+    @Column(name = "attended")
+    private boolean attended = false;
+
     public Booking(User member, TrainingClass trainingClass) {
         this.member = member;
         this.trainingClass = trainingClass;
