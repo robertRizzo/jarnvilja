@@ -64,6 +64,28 @@ header a.active-link {
     padding-bottom: 2px;
 }
 
+header nav form.logout-form-inline {
+    display: inline;
+    margin: 0 12px;
+}
+
+header nav .nav-link-as-button {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+header nav .nav-link-as-button:hover {
+    color: #90caf9;
+}
+
 .hamburger {
     display: none;
     cursor: pointer;
@@ -87,6 +109,16 @@ header a.active-link {
     }
     header nav.active a {
         display: block;
+    }
+    header nav form.logout-form-inline {
+        display: none;
+        margin: 6px 0;
+    }
+    header nav.active form.logout-form-inline {
+        display: block;
+    }
+    header nav.active .nav-link-as-button {
+        display: inline-block;
     }
     .hamburger {
         display: block;

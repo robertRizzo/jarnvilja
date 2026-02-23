@@ -18,9 +18,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.net.URI;
-import java.util.Set;
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -87,25 +84,10 @@ public class WebSecurityConfig {
         };
     }
 
-    private static final Set<String> PUBLIC_PATHS = Set.of(
-            "/", "/index", "/login", "/register", "/bli_medlem", "/faq",
-            "/integritetspolicy", "/kontakt", "/om_klubben", "/tranare",
-            "/traningsschema", "/om_projektet", "/forgot-password", "/reset-password");
-
     @Bean
     public LogoutSuccessHandler customLogoutSuccessHandler() {
         return (request, response, authentication) -> {
-            String referer = request.getHeader("Referer");
-            String target = "/login";
-            if (referer != null) {
-                try {
-                    String path = URI.create(referer).getPath();
-                    if (PUBLIC_PATHS.contains(path)) {
-                        target = path;
-                    }
-                } catch (Exception ignored) {}
-            }
-            response.sendRedirect(target);
+            response.sendRedirect("/login?logout");
         };
     }
 

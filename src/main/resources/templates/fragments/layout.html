@@ -30,7 +30,10 @@
         <a sec:authorize="hasAuthority('ROLE_MEMBER')" th:href="@{/memberPage}" th:classappend="${currentPath == '/memberPage'} ? 'active-link'">Min sida</a>
         <a sec:authorize="hasAuthority('ROLE_ADMIN')" th:href="@{/adminPage}" th:classappend="${currentPath == '/adminPage'} ? 'active-link'">Admin</a>
         <a sec:authorize="hasAuthority('ROLE_TRAINER')" th:href="@{/trainerPage}" th:classappend="${currentPath == '/trainerPage'} ? 'active-link'">Tränare</a>
-        <a th:if="${#authorization.expression('isAuthenticated()')}" th:href="@{/logout}">Logga ut</a>
+        <form th:if="${#authorization.expression('isAuthenticated()')}" method="post" th:action="@{/logout}" class="logout-form-inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="nav-link-as-button">Logga ut</button>
+        </form>
         <span class="hamburger" id="hamburgerToggle" aria-label="Meny" role="button" aria-expanded="false">&#9776;</span>
     </nav>
 </header>
